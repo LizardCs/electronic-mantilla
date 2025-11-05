@@ -120,7 +120,7 @@ export default function HomePage() {
                   <div className="space-y-4">
                     <div className="flex items-center space-x-3">
                       <Smartphone className="text-blue-600" size={20} />
-                      <span className="text-gray-700">+57 123 456 7890</span>
+                      <span className="text-gray-700">+593 098 341 1212</span>
                     </div>
                     <div className="flex items-center space-x-3">
                       <Award className="text-blue-600" size={20} />

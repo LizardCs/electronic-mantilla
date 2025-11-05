@@ -1,10 +1,9 @@
-// src/components/layout/Header.tsx
 'use client';
 
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
-import { Menu, X, Phone, Wrench, User, LogOut } from 'lucide-react';
+import { Menu, X, Phone, Wrench, User, LogOut, FileText } from 'lucide-react';
 
 export const Header = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -84,10 +83,13 @@ export const Header = () => {
                   <span className="font-medium">Hola, {user.email.split('@')[0]}</span>
                 </div>
                 <Link 
-                  href="/dashboard" 
-                  className="text-gray-700 hover:text-blue-600 font-medium transition-colors"
+                  href="/reportes" 
+                  className={`flex items-center space-x-1 font-medium transition-colors ${
+                    isActive('/reportes') ? 'text-blue-600' : 'text-gray-700 hover:text-blue-600'
+                  }`}
                 >
-                  Dashboard
+                  <FileText size={18} />
+                  <span>Reportes</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -171,11 +173,12 @@ export const Header = () => {
                     <span>{user.email}</span>
                   </div>
                   <Link 
-                    href="/dashboard" 
-                    className="text-gray-700 hover:text-blue-600 font-medium"
+                    href="/reportes" 
+                    className="flex items-center space-x-1 text-gray-700 hover:text-blue-600 font-medium"
                     onClick={() => setIsMenuOpen(false)}
                   >
-                    Dashboard
+                    <FileText size={18} />
+                    <span>Reportes</span>
                   </Link>
                   <button
                     onClick={handleLogout}
