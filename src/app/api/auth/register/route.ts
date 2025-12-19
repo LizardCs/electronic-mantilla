@@ -1,91 +1,89 @@
-// src/app/api/auth/register/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import bcrypt from 'bcryptjs';
 import mysql from 'mysql2/promise';
 
+// Configuración de la base de datos
 const dbConfig = {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT!),
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
 };
 
 export async function POST(request: NextRequest) {
+  let connection;
   try {
     const body = await request.json();
-    const { email, password, user } = body;
+    
+    // 1. Extraemos los campos exactos de tu nueva tabla
+    const { cedula, nombres, apellidos, usuario, password, celular } = body;
 
-    console.log('📝 Datos recibidos para registro:', { email, user });
+    console.log('📝 Intento de registro para:', { usuario, cedula });
 
-    // Validaciones básicas
-    if (!email || !password || !user) {
-      console.log('❌ Faltan campos requeridos');
+    // 2. Validaciones básicas
+    if (!cedula || !nombres || !apellidos || !usuario || !password) {
       return NextResponse.json(
-        { error: 'Email, usuario y contraseña son requeridos' },
+        { error: 'Cédula, nombres, apellidos, usuario y contraseña son obligatorios' },
         { status: 400 }
       );
     }
 
     if (password.length < 6) {
-      console.log('❌ Contraseña muy corta');
       return NextResponse.json(
         { error: 'La contraseña debe tener al menos 6 caracteres' },
         { status: 400 }
       );
     }
 
-    const connection = await mysql.createConnection(dbConfig);
+    // Establecer conexión
+    connection = await mysql.createConnection(dbConfig);
 
-    try {
-      // Verificar si el usuario ya existe
-      console.log('🔍 Verificando si usuario existe...');
-      const [existingUsers] = await connection.execute(
-        'SELECT id, email, user FROM users WHERE email = ? OR user = ?',
-        [email, user]
+    // 3. Verificar si la cédula o el usuario ya existen en 'usersweb'
+    const [existingUsers] = await connection.execute(
+      'SELECT WEB_ID FROM usersweb WHERE WEB_CED = ? OR WEB_USU = ?',
+      [cedula, usuario]
+    );
+
+    if ((existingUsers as any[]).length > 0) {
+      return NextResponse.json(
+        { error: 'La cédula o el nombre de usuario ya están registrados' },
+        { status: 400 }
       );
-
-      const usersArray = existingUsers as any[];
-      console.log('📊 Usuarios existentes encontrados:', usersArray);
-
-      if (usersArray.length > 0) {
-        const existingUser = usersArray[0];
-        console.log('❌ Usuario ya existe:', existingUser);
-        return NextResponse.json(
-          { error: 'El email o usuario ya está registrado' },
-          { status: 400 }
-        );
-      }
-
-      // Hash de la contraseña
-      console.log('🔐 Hasheando contraseña...');
-      const hashedPassword = await bcrypt.hash(password, 12);
-
-      // Insertar nuevo usuario
-      console.log('💾 Insertando nuevo usuario...');
-      const [result] = await connection.execute(
-        'INSERT INTO users (email, user, password) VALUES (?, ?, ?)',
-        [email, user, hashedPassword]
-      );
-
-      const userId = (result as any).insertId;
-      console.log('✅ Usuario registrado exitosamente. ID:', userId);
-
-      return NextResponse.json({
-        message: 'Usuario registrado exitosamente',
-        userId: userId
-      });
-
-    } finally {
-      await connection.end();
     }
 
+    // 4. Hashear la contraseña para seguridad
+    const hashedPassword = await bcrypt.hash(password, 12);
+
+    // 5. Insertar en la tabla 'usersweb' usando tus nombres de columna
+    const [result] = await connection.execute(
+      `INSERT INTO usersweb (
+        WEB_CED, 
+        WEB_NOMBRES, 
+        WEB_APELLIDOS, 
+        WEB_USU, 
+        WEB_CLAVE, 
+        WEB_CELU
+      ) VALUES (?, ?, ?, ?, ?, ?)`,
+      [cedula, nombres, apellidos, usuario, hashedPassword, celular || null]
+    );
+
+    const newId = (result as any).insertId;
+
+    return NextResponse.json({
+      success: true,
+      message: 'Usuario registrado exitosamente',
+      userId: newId
+    });
+
   } catch (error: any) {
-    console.error('💥 Error completo en registro:', error);
-    
+    console.error('💥 Error en registro:', error);
     return NextResponse.json(
-      { error: 'Error interno del servidor: ' + error.message },
+      { error: 'Error interno del servidor: ' + (error.sqlMessage || error.message) },
       { status: 500 }
     );
+  } finally {
+    // Cerramos la conexión para liberar recursos
+    if (connection) await connection.end();
   }
 }

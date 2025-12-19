@@ -2,37 +2,44 @@ import { NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 
 const dbConfig = {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT!),
+  host: process.env.DB_HOST || '127.0.0.1',
+  port: parseInt(process.env.DB_PORT || '3306'),
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
 };
 
 export async function GET() {
+  let connection;
   try {
-    const connection = await mysql.createConnection(dbConfig);
+    connection = await mysql.createConnection(dbConfig);
     
-    // Probar consulta simple
-    const [rows] = await connection.execute('SELECT 1 + 1 as result');
+    // 1. CAMBIO: DESCRIBE la tabla correcta 'usersweb'
+    const [tableStructure] = await connection.execute('DESCRIBE usersweb');
     
-    await connection.end();
+    // 2. CAMBIO: SELECT con los nombres de columnas reales de tu tabla
+    // Usamos WEB_ID, WEB_USU, etc.
+    const [existingUsers] = await connection.execute(
+      'SELECT WEB_ID, WEB_USU, WEB_NOMBRES, WEB_FEC_CREADO FROM usersweb LIMIT 5'
+    );
     
     return NextResponse.json({ 
       success: true,
-      message: 'Conexión exitosa a la base de datos',
-      result: rows
+      tableStructure,
+      existingUsers
     });
     
   } catch (error: any) {
-    console.error('Error de conexión:', error);
+    console.error('Error en GET:', error);
     return NextResponse.json(
       { 
-        success: false,
-        error: 'Error de conexión a la base de datos',
-        details: error.message
+        success: false, 
+        error: error.message,
+        tip: "Asegúrate de que la tabla se llame 'usersweb' y no 'users'" 
       },
       { status: 500 }
     );
+  } finally {
+    if (connection) await connection.end();
   }
 }

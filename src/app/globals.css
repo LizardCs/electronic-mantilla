@@ -1,58 +1,105 @@
-/* src/app/globals.css */
 @import "tailwindcss";
 
 :root {
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #001C38; /* Azul marino profundo para texto principal */
+  
+  /* Paleta Electrónica Mantilla */
+  --color-blue-dark: #001C38;    /* Navy Blue (Bienvenido/Encabezados) */
+  --color-blue-vibrant: #2563eb; /* Azul Vibrante (Logo/Registrarse/Iconos) */
+  --color-blue-light: #88BBDC;   /* Azul Claro (Subtítulos/Detalles) */
+  --color-success: #34C759;      /* Verde (Éxito/Conectado) */
 }
 
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+  --color-brand-dark: var(--color-blue-dark);
+  --color-brand-vibrant: var(--color-blue-vibrant);
+  --color-brand-light: var(--color-blue-light);
+  --color-brand-success: var(--color-success);
 }
 
 body {
-  background: var(--background);
+  background: #f8fafc; /* Fondo grisáceo muy suave para que las tarjetas resalten */
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
 }
 
-/* Nuestras clases personalizadas */
 html {
   scroll-behavior: smooth;
 }
 
+/* --- CLASES DE BOTONES PREMIUM --- */
+
 .btn-primary {
-  background: #2563eb;
+  background: var(--color-blue-dark);
   color: white;
   padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: background-color 0.2s;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(0, 28, 56, 0.15);
 }
 
 .btn-primary:hover {
+  background: #002d5a;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(0, 28, 56, 0.2);
+}
+
+.btn-vibrant {
+  background: var(--color-blue-vibrant);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.btn-vibrant:hover {
   background: #1d4ed8;
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(37, 99, 235, 0.3);
 }
 
 .btn-secondary {
-  background: #e5e7eb;
-  color: #171717;
-  padding: 12px 24px;
-  border-radius: 8px;
-  font-weight: 600;
-  transition: background-color 0.2s;
+  border: 2px solid var(--color-blue-dark);
+  color: var(--color-blue-dark);
+  padding: 10px 22px;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .btn-secondary:hover {
-  background: #d1d5db;
+  background: rgba(0, 28, 56, 0.05);
+  border-color: var(--color-blue-vibrant);
+  color: var(--color-blue-vibrant);
+}
+
+.btn-success {
+  background: var(--color-success);
+  color: white;
+  padding: 12px 24px;
+  border-radius: 12px;
+  font-weight: 700;
+  transition: all 0.3s ease;
+}
+
+/* Efecto de focus profesional para accesibilidad */
+button:focus-visible, a:focus-visible {
+  outline: 2px solid var(--color-blue-vibrant);
+  outline-offset: 2px;
 }

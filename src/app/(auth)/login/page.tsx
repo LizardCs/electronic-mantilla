@@ -1,42 +1,49 @@
-// src/app/(auth)/login/page.tsx
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { Lock, User, Wrench, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
-  const [user, setUser] = useState(''); // ✅ Cambiado a 'user'
+  const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+  const [successMsg, setSuccessMsg] = useState('');
+  
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  // Detectar mensajes de éxito (ej. desde el registro)
+  useEffect(() => {
+    const message = searchParams.get('message');
+    if (message) setSuccessMsg(message);
+  }, [searchParams]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError('');
+    setSuccessMsg('');
 
     try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ user, password }), // ✅ Enviar 'user' no 'email'
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ user, password }),
       });
 
       const data = await response.json();
 
       if (response.ok) {
-        // Guardar en localStorage
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('isAuthenticated', 'true');
         router.push('/');
       } else {
-        setError(data.error);
+        setError(data.error || 'Credenciales incorrectas');
       }
-    } catch (error) {
+    } catch (err) {
       setError('Error de conexión con el servidor');
     } finally {
       setLoading(false);
@@ -44,88 +51,104 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8">
-        <div>
-          <h2 className="mt-6 text-center text-3xl font-extrabold text-gray-900">
-            Iniciar Sesión
+    <div className="min-h-screen flex items-center justify-center bg-[#f8fafc] py-12 px-4 sm:px-6 lg:px-8">
+      <div className="max-w-md w-full">
+        {/* Logo e Identidad */}
+        <div className="text-center mb-10">
+          <div className="inline-flex items-center justify-center w-20 h-20 bg-[#001C38] rounded-[2rem] shadow-xl mb-6 transform -rotate-3">
+            <Wrench className="text-white" size={36} />
+          </div>
+          <h2 className="text-4xl font-extrabold text-[#001C38] tracking-tight">
+            Bienvenido
           </h2>
-          <p className="mt-2 text-center text-sm text-gray-600">
+          <p className="mt-2 text-[#88BBDC] font-semibold uppercase text-xs tracking-widest">
             Electronic Mantilla Reports
           </p>
         </div>
-        
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+
+        {/* Tarjeta de Login */}
+        <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/5 border border-gray-100">
+          
+          {/* Alertas */}
           {error && (
-            <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded">
-              {error}
+            <div className="mb-6 flex items-center gap-3 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl text-red-700 text-sm animate-in fade-in slide-in-from-top-2">
+              <AlertCircle size={18} />
+              <p className="font-medium">{error}</p>
+            </div>
+          )}
+
+          {successMsg && (
+            <div className="mb-6 flex items-center gap-3 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-xl text-green-700 text-sm animate-in fade-in slide-in-from-top-2">
+              <CheckCircle2 size={18} />
+              <p className="font-medium">{successMsg}</p>
             </div>
           )}
           
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div>
-              <label htmlFor="user" className="sr-only">
-                Usuario
-              </label>
+          <form className="space-y-5" onSubmit={handleSubmit}>
+            {/* Campo Usuario */}
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#001C38] transition-colors">
+                <User size={20} />
+              </div>
               <input
-                id="user"
-                name="user"
                 type="text"
-                autoComplete="username"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-t-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="block w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm focus:ring-2 focus:ring-[#001C38] focus:border-transparent focus:bg-white outline-none transition-all"
                 placeholder="Nombre de usuario"
                 value={user}
                 onChange={(e) => setUser(e.target.value)}
               />
             </div>
-            <div>
-              <label htmlFor="password" className="sr-only">
-                Contraseña
-              </label>
+
+            {/* Campo Password */}
+            <div className="relative group">
+              <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-gray-400 group-focus-within:text-[#001C38] transition-colors">
+                <Lock size={20} />
+              </div>
               <input
-                id="password"
-                name="password"
                 type="password"
-                autoComplete="current-password"
                 required
-                className="appearance-none rounded-none relative block w-full px-3 py-2 border border-gray-300 placeholder-gray-500 text-gray-900 rounded-b-md focus:outline-none focus:ring-blue-500 focus:border-blue-500 focus:z-10 sm:text-sm"
+                className="block w-full pl-12 pr-4 py-4 bg-gray-50 border border-gray-200 rounded-2xl text-gray-900 text-sm focus:ring-2 focus:ring-[#001C38] focus:border-transparent focus:bg-white outline-none transition-all"
                 placeholder="Contraseña"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
               />
             </div>
-          </div>
 
-          <div>
+            {/* Botón Submit */}
             <button
               type="submit"
               disabled={loading}
-              className="group relative w-full flex justify-center py-2 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 transition-colors"
+              className="w-full bg-[#001C38] text-white py-4 rounded-2xl font-bold flex items-center justify-center gap-2 hover:bg-[#002d5a] active:scale-[0.98] transition-all shadow-lg shadow-blue-900/20 disabled:opacity-70"
             >
               {loading ? (
-                <span className="flex items-center">
-                  <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                  </svg>
-                  Iniciando sesión...
-                </span>
+                <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
-                'Iniciar Sesión'
+                <>
+                  Iniciar Sesión
+                  <ArrowRight size={20} />
+                </>
               )}
             </button>
-          </div>
 
-          <div className="text-center">
-            <Link 
-              href="/register" 
-              className="font-medium text-blue-600 hover:text-blue-500 transition-colors"
-            >
-              ¿No tienes cuenta? Regístrate
-            </Link>
-          </div>
-        </form>
+            {/* Link a Registro */}
+            <div className="pt-6 text-center border-t border-gray-50">
+              <p className="text-sm text-gray-500">
+                ¿No tienes una cuenta web?{' '}
+                <Link 
+                  href="/register" 
+                  className="text-[#001C38] font-bold hover:underline underline-offset-4"
+                >
+                  Regístrate ahora
+                </Link>
+              </p>
+            </div>
+          </form>
+        </div>
+        
+        <p className="mt-8 text-center text-xs text-gray-400">
+          © {new Date().getFullYear()} Electrónica Mantilla — Sistema de Gestión Web
+        </p>
       </div>
     </div>
   );
