@@ -13,7 +13,6 @@ export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // Detecta si estamos en login o registro para el color de las letras
   const isAuthPage = pathname === '/login' || pathname === '/register';
 
   useEffect(() => {
@@ -43,18 +42,12 @@ export const Header = () => {
   const isActive = (path: string) => pathname === path;
   if (!mounted) return null;
 
-  // --- Lógica de Estilos ---
-  
-  // El fondo solo cambia con el scroll, no por la página
   const headerBg = isScrolled 
     ? 'bg-white/95 backdrop-blur-md shadow-xl py-2' 
     : 'bg-transparent py-4';
   
-  // Las letras sí cambian si es scroll o si es página de auth (para legibilidad)
   const textColor = (isScrolled || isAuthPage) ? 'text-[#00122e]' : 'text-white';
   const logoBorder = (isScrolled || isAuthPage) ? 'border-[#00122e]/10' : 'border-[#ffcc00]/30';
-  
-  // Amarillo bajito para el estado activo
   const activeYellow = 'text-[#fde68a]'; 
 
   return (
@@ -99,10 +92,12 @@ export const Header = () => {
                   <span>Reportes</span>
                 </Link>
 
+                {/* --- BOTÓN SALIR AMARILLO BAJITO --- */}
                 <button
                   onClick={handleLogout}
-                  className="text-red-500 hover:text-red-700 font-black uppercase tracking-widest text-xs transition-colors"
+                  className="bg-[#fde68a] hover:bg-[#fcd34d] text-[#00122e] px-6 py-2.5 rounded-full font-black uppercase tracking-widest text-[10px] transition-all shadow-lg hover:shadow-[#fde68a]/20 active:scale-95 flex items-center gap-2"
                 >
+                  <LogOut size={14} />
                   Salir
                 </button>
               </div>
@@ -142,7 +137,15 @@ export const Header = () => {
           {user ? (
             <>
               <Link href="/reportes" className="block py-4 text-white font-black uppercase tracking-widest border-b border-white/5">Reportes</Link>
-              <button onClick={handleLogout} className="w-full text-left py-4 text-red-400 font-black uppercase tracking-widest">Salir</button>
+              <div className="pt-4">
+                <button 
+                  onClick={handleLogout} 
+                  className="w-full py-4 bg-[#fde68a] text-[#00122e] font-black uppercase tracking-widest rounded-xl shadow-lg flex items-center justify-center gap-2"
+                >
+                  <LogOut size={18} />
+                  Salir
+                </button>
+              </div>
             </>
           ) : (
             <div className="grid grid-cols-1 gap-4 pt-4">
