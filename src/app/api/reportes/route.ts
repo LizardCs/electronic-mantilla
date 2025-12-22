@@ -1,45 +1,38 @@
 import { NextResponse } from 'next/server';
 import mysql from 'mysql2/promise';
 
+const dbConfig = { 
+  host: '127.0.0.1', 
+  user: 'root', 
+  password: '', 
+  database: 'electronic_mantilla_reports' 
+};
+
 export async function GET() {
+  let connection;
   try {
-    const connection = await mysql.createConnection({
-      host: '127.0.0.1', // Es más estable que 'localhost' en Node.js
-      user: 'root',
-      password: '', 
-      database: 'electronic_mantilla_reports' // Nombre real según tu captura
-    });
-
-    // 1. Ejecutamos la consulta
-    const [rows]: any = await connection.execute('SELECT * FROM reportes ORDER BY REP_FECHA DESC');
-    await connection.end();
-
-    // 2. Procesamos los datos para el visualizador de PDF
-    const reportesProcesados = rows.map((row: any) => {
-      let pdfUrl = null;
-
-      // Si hay un BLOB en REP_DOC, lo convertimos a un String Base64
-      if (row.REP_DOC && Buffer.isBuffer(row.REP_DOC)) {
-        const base64 = row.REP_DOC.toString('base64');
-        pdfUrl = `data:application/pdf;base64,${base64}`;
+    connection = await mysql.createConnection(dbConfig);
+    const [rows]: any = await connection.execute('SELECT * FROM reportes');
+    
+    const procesados = rows.map((r: any) => {
+      let base64pdf = null;
+      
+      // Verificamos si existe el documento y si es un Buffer (BLOB de MySQL)
+      if (r.REP_DOC && Buffer.isBuffer(r.REP_DOC)) {
+        base64pdf = `data:application/pdf;base64,${r.REP_DOC.toString('base64')}`;
       }
 
       return {
-        ...row,
-        REP_DOC: pdfUrl // Ahora el frontend puede usar esto en un <iframe> o <embed>
+        ...r,
+        REP_DOC: base64pdf
       };
     });
 
-    // 3. Devolvemos el Array (esto evita el error .filter is not a function)
-    return NextResponse.json(reportesProcesados);
-
+    return NextResponse.json(procesados);
   } catch (error: any) {
-    console.error("Error en la API de reportes:", error.message);
-    
-    // Si hay error, devolvemos un objeto con el mensaje para que el frontend lo muestre
-    return NextResponse.json(
-      { error: 'No se pudo conectar a la base de datos: ' + error.message }, 
-      { status: 500 }
-    );
+    console.error("Error API:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  } finally {
+    if (connection) await connection.end();
   }
 }
