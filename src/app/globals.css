@@ -9,6 +9,12 @@
   --color-slate-deep: #1e293b;   /* Azul grisáceo para degradados y cards */
   --color-yellow-soft: #fde68a;  /* Amarillo crema: Menos brillante, más elegante */
   --color-success: #16a34a;      /* Verde más natural */
+  
+  /* Nuevos colores específicos para reportes */
+  --color-red-soft: #fecaca;     /* Rojo suave para botones de PDF */
+  --color-red-deep: #dc2626;     /* Rojo más intenso para hover */
+  --color-green-soft: #bbf7d0;   /* Verde suave para botones de descarga */
+  --color-green-deep: #16a34a;   /* Verde intenso para hover */
 }
 
 @theme inline {
@@ -18,6 +24,16 @@
   --color-brand-slate: var(--color-slate-deep);
   --color-brand-accent: var(--color-yellow-soft);
   --color-brand-success: var(--color-success);
+  --color-red-soft: var(--color-red-soft);
+  --color-red-deep: var(--color-red-deep);
+  --color-green-soft: var(--color-green-soft);
+  --color-green-deep: var(--color-green-deep);
+  
+  /* Animaciones personalizadas */
+  --animate-fade-in: fade-in 0.3s ease-out;
+  --animate-fade-out: fade-out 0.3s ease-in;
+  --animate-spin-slow: spin 1.5s linear infinite;
+  --animate-bounce-slow: bounce 2s infinite;
 }
 
 body {
@@ -25,10 +41,52 @@ body {
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
 }
 
 html {
   scroll-behavior: smooth;
+}
+
+/* --- ANIMACIONES --- */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+}
+
+@keyframes pulse-subtle {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -1000px 0;
+  }
+  100% {
+    background-position: 1000px 0;
+  }
 }
 
 /* --- CLASES DE BOTONES REFINADAS --- */
@@ -94,8 +152,214 @@ html {
   border-color: white;
 }
 
+/* Botón VER PDF (Estilo específico) */
+.btn-pdf-view {
+  background: var(--color-red-soft);
+  color: var(--color-red-deep);
+  border: 2px solid var(--color-red-soft);
+  padding: 12px 28px;
+  border-radius: 20px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(220, 38, 38, 0.1);
+}
+
+.btn-pdf-view:hover:not(:disabled) {
+  background: var(--color-red-deep);
+  color: white;
+  border-color: var(--color-red-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(220, 38, 38, 0.2);
+}
+
+.btn-pdf-view:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Botón DESCARGAR (Estilo específico) */
+.btn-pdf-download {
+  background: var(--color-green-soft);
+  color: var(--color-green-deep);
+  border: 2px solid var(--color-green-soft);
+  padding: 12px 28px;
+  border-radius: 20px;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  box-shadow: 0 4px 14px rgba(22, 163, 74, 0.1);
+}
+
+.btn-pdf-download:hover:not(:disabled) {
+  background: var(--color-green-deep);
+  color: white;
+  border-color: var(--color-green-deep);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 20px rgba(22, 163, 74, 0.2);
+}
+
+.btn-pdf-download:disabled {
+  background: #f3f4f6;
+  color: #9ca3af;
+  border-color: #e5e7eb;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
 /* Efecto de focus profesional */
 button:focus-visible, a:focus-visible {
   outline: 2px solid var(--color-yellow-soft);
   outline-offset: 2px;
+}
+
+/* --- ESTILOS PARA EL MODAL DE PDF --- */
+.modal-backdrop {
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  background: rgba(0, 0, 0, 0.85);
+}
+
+.modal-content {
+  animation: fade-in 0.3s ease-out;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+/* Estilos para el PDF en el iframe */
+.pdf-container {
+  background: linear-gradient(45deg, #f8fafc 25%, transparent 25%), 
+              linear-gradient(-45deg, #f8fafc 25%, transparent 25%), 
+              linear-gradient(45deg, transparent 75%, #f8fafc 75%), 
+              linear-gradient(-45deg, transparent 75%, #f8fafc 75%);
+  background-size: 20px 20px;
+  background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+}
+
+/* Estilos para los estados de carga */
+.loading-shimmer {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 1000px 100%;
+  animation: shimmer 2s infinite linear;
+}
+
+/* Scrollbar personalizado */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 8px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: var(--color-slate-deep);
+  border-radius: 4px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: var(--color-navy-mate);
+}
+
+/* Estilos para tarjetas de servicio */
+.service-card {
+  background: linear-gradient(145deg, #ffffff, #f0f4f8);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  border: 1px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 
+    0 10px 25px -5px rgba(15, 23, 42, 0.05),
+    0 8px 10px -6px rgba(15, 23, 42, 0.025);
+}
+
+.service-card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(37, 99, 235, 0.2);
+  box-shadow: 
+    0 20px 40px -10px rgba(15, 23, 42, 0.1),
+    0 10px 15px -8px rgba(15, 23, 42, 0.05);
+}
+
+/* Estados del servicio */
+.status-badge {
+  font-variant-numeric: tabular-nums;
+  letter-spacing: 0.1em;
+  transition: all 0.2s ease;
+}
+
+.status-badge:hover {
+  transform: scale(1.05);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .modal-content {
+    margin: 1rem;
+    height: 85vh;
+    border-radius: 1.5rem;
+  }
+  
+  .btn-pdf-view,
+  .btn-pdf-download {
+    padding: 10px 20px;
+    font-size: 11px;
+  }
+}
+
+@media (max-width: 480px) {
+  .modal-content {
+    margin: 0.5rem;
+    height: 80vh;
+    border-radius: 1rem;
+  }
+}
+
+/* Mejoras de accesibilidad */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .btn-pdf-view,
+  .btn-pdf-download {
+    border-width: 3px;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .service-card {
+    background: linear-gradient(145deg, #1e293b, #0f172a);
+    border-color: rgba(255, 255, 255, 0.1);
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: #0f172a;
+  }
+  
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: var(--color-slate-deep);
+  }
 }
