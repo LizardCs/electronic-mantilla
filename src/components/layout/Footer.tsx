@@ -7,7 +7,8 @@ export const Footer = () => {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="relative overflow-hidden bg-[#0f172a] bg-[linear-gradient(135deg,#0f172a_0%,#1e293b_50%,#1e1b4b_100%)] text-white">
+    // ACTUALIZADO: Gradiente exacto del Hero Section
+    <footer className="relative overflow-hidden bg-[#0f172a] bg-[linear-gradient(135deg,#0f172a_0%,#1e3a8a_50%,#1e40af_100%)] text-white">
       
       {/* LÍNEA CURVA DIAGONAL (Mismo estilo que el Hero) */}
       <svg 
@@ -36,29 +37,30 @@ export const Footer = () => {
           {/* Información de la empresa y Logo */}
           <div className="col-span-1 md:col-span-2">
             <div className="flex items-center space-x-4 mb-6">
-              <div className="w-14 h-14 bg-gradient-to-br from-[#0f172a] to-[#0047ab] rounded-xl flex items-center justify-center shadow-xl border-2 border-[#fde68a]/20">
-                <Wrench className="text-white" size={28} />
+              {/* ACTUALIZADO: Color de fondo del icono para mayor contraste */}
+              <div className="w-14 h-14 bg-[#001c38]/80 backdrop-blur-md rounded-xl flex items-center justify-center shadow-xl border-2 border-[#fde68a]/20">
+                <Wrench className="text-[#fde68a]" size={28} />
               </div>
               <div className="flex flex-col leading-none">
                 <span className="text-xl font-black tracking-widest uppercase">ELECTRONICA</span>
                 <span className="text-4xl font-bold text-[#fde68a] italic -mt-1">Mantilla</span>
-                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/60 mt-1">Centro de Servicio Autorizado</span>
+                <span className="text-[10px] font-bold tracking-[0.2em] uppercase text-white/60 mt-1 border-l-2 border-[#fde68a] pl-2">Centro de Servicio Autorizado</span>
               </div>
             </div>
             
-            <p className="text-white/60 mb-8 max-w-md text-sm leading-relaxed italic">
+            <p className="text-white/70 mb-8 max-w-md text-sm leading-relaxed italic font-light">
               Especialistas en la reparación y mantenimiento preventivo de equipos electrónicos y línea blanca. 
               Garantizamos soluciones técnicas con estándares de calidad y repuestos originales en Ambato.
             </p>
             
             <div className="space-y-3">
-              <div className="flex items-center space-x-3 text-white/80 hover:text-[#fde68a] transition-colors group">
+              <div className="flex items-center space-x-3 text-white/80 hover:text-[#fde68a] transition-colors group cursor-pointer">
                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-[#fde68a]/10">
                   <Phone size={16} className="text-[#fde68a]" />
                 </div>
                 <span className="text-sm font-medium">+593 098 341 1212</span>
               </div>
-              <div className="flex items-center space-x-3 text-white/80 hover:text-[#fde68a] transition-colors group">
+              <div className="flex items-center space-x-3 text-white/80 hover:text-[#fde68a] transition-colors group cursor-pointer">
                 <div className="w-8 h-8 rounded-lg bg-white/5 flex items-center justify-center group-hover:bg-[#fde68a]/10">
                   <Mail size={16} className="text-[#fde68a]" />
                 </div>
@@ -111,14 +113,14 @@ export const Footer = () => {
         {/* Línea divisoria y Copyright */}
         <div className="border-t border-white/10 mt-16 pt-8">
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
-            <p className="text-white/40 text-xs tracking-wide">
-              © {currentYear} <span className="text-white/60 font-bold uppercase">Electrónica Mantilla</span>. Todos los derechos reservados.
+            <p className="text-white/40 text-[10px] tracking-widest uppercase">
+              © {currentYear} <span className="text-white/60 font-black">Electrónica Mantilla</span>. Todos los derechos reservados.
             </p>
             <div className="flex space-x-8">
-              <Link href="/privacy" className="text-white/40 hover:text-[#fde68a] text-xs transition-colors font-bold uppercase tracking-tighter">
+              <Link href="/privacy" className="text-white/40 hover:text-[#fde68a] text-[10px] transition-colors font-bold uppercase tracking-widest">
                 Privacidad
               </Link>
-              <Link href="/terms" className="text-white/40 hover:text-[#fde68a] text-xs transition-colors font-bold uppercase tracking-tighter">
+              <Link href="/terms" className="text-white/40 hover:text-[#fde68a] text-[10px] transition-colors font-bold uppercase tracking-widest">
                 Términos
               </Link>
             </div>
