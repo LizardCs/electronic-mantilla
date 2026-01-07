@@ -80,7 +80,7 @@ export default function ReportesPage() {
           
           <div className="flex justify-between items-center mb-8">
             <h1 className="text-3xl font-extrabold text-[#001C38] tracking-tight italic uppercase">
-              Gestión de <span className="text-[#2563eb]">Reportes</span>
+              Gestión de Reportes
             </h1>
             <button onClick={fetchData} className="p-3 bg-white rounded-xl shadow-sm border border-gray-100 text-[#2563eb] hover:bg-blue-50 transition-all">
               <RefreshCw size={20} className={loading ? "animate-spin" : ""} />
@@ -119,7 +119,7 @@ export default function ReportesPage() {
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={22} />
             <input 
               type="text" 
-              placeholder={`Buscando en ${estadoFiltro === 'todos' ? 'todos' : estadoFiltro === 'proceso' ? 'en proceso' : 'completados'}...`} 
+              placeholder={`Busqueda en ${estadoFiltro === 'todos' ? 'todos' : estadoFiltro === 'proceso' ? 'en proceso' : 'completados'}...`} 
               className="w-full pl-16 pr-6 py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm outline-none font-medium text-[#001C38]"
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}

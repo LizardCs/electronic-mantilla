@@ -1,3 +1,4 @@
+// src/app/page.tsx
 'use client';
 
 import { 
@@ -107,11 +108,10 @@ export default function HomePage() {
           <div className="absolute bottom-0 left-0 w-full h-40 bg-gradient-to-b from-transparent to-white z-0 pointer-events-none"></div>
         </section>
 
-        {/* 2. EXPERTOS EN MARCAS LÍDERES - CORREGIDO SINTAXIS */}
+        {/* 2. EXPERTOS EN MARCAS LÍDERES */}
         <section className="relative z-20 -mt-24 pb-16 text-center"> 
             <h2 className="text-[10px] font-black text-slate-800 uppercase tracking-[0.5em] mb-4 drop-shadow-sm">Expertos en Marcas Líderes</h2>
             <div className="w-12 h-1 bg-[#fde68a] mx-auto rounded-full mb-10"></div>
-            
             <div className="max-w-5xl mx-auto px-4">
               <Swiper
                 modules={[Autoplay, EffectCoverflow]}
