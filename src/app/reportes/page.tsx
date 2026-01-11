@@ -1,10 +1,11 @@
+// src/app/reportes/page.tsx
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { 
   Search, FileText, RefreshCw, ClipboardList, 
-  Clock, CheckCircle2, X, Download
+  Clock, CheckCircle2, X
 } from 'lucide-react';
 
 export default function ReportesPage() {
@@ -12,7 +13,6 @@ export default function ReportesPage() {
   const [reportes, setReportes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('');
-  // --- NUEVO ESTADO PARA EL FILTRO DE ESTADO ---
   const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'proceso' | 'completado'>('todos');
   const [modalOpen, setModalOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
@@ -20,6 +20,7 @@ export default function ReportesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
+      // Consumimos las APIs que migramos a Supabase
       const [resServ, resRep] = await Promise.all([
         fetch('/api/servicios'),
         fetch('/api/reportes')
@@ -30,7 +31,7 @@ export default function ReportesPage() {
       if (Array.isArray(sData)) setServicios(sData);
       if (Array.isArray(rData)) setReportes(rData);
     } catch (err) {
-      console.error("Error al sincronizar datos");
+      console.error("❌ Error al sincronizar con Supabase");
     } finally {
       setLoading(false);
     }
@@ -38,6 +39,7 @@ export default function ReportesPage() {
 
   useEffect(() => { fetchData(); }, []);
 
+  // Unificamos las dos tablas (Servicios + Reportes)
   const datosMapeados = servicios.map(s => {
     const rep = reportes.find(r => r.REP_SEV_NUM === s.SERV_NUM);
     return {
@@ -49,15 +51,16 @@ export default function ReportesPage() {
       tecnico_nombre: s.SERV_NOM_REC,
       descripcion_tecnico: rep?.REP_TIPO,
       fecha_fin: rep?.REP_FECHA,
-      documento_pdf: rep?.REP_DOC
+      documento_pdf: rep?.REP_DOC // Ya viene con el prefijo Base64 desde la API
     };
   });
 
+  // Estadísticas para las tarjetas
   const total = datosMapeados.length;
   const enProceso = datosMapeados.filter(s => parseInt(s.estado) === 0).length;
   const completados = datosMapeados.filter(s => parseInt(s.estado) === 1).length;
 
-  // --- LÓGICA DE FILTRADO ACTUALIZADA ---
+  // Lógica de filtrado
   const filtrados = datosMapeados.filter(s => {
     const cumpleTexto = 
       s.tecnico_nombre?.toLowerCase().includes(filtro.toLowerCase()) ||
@@ -87,7 +90,7 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Panel de Totales (Ahora Interactivo) */}
+          {/* Tarjetas de Resumen Interactivas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <button 
               onClick={() => setEstadoFiltro('todos')}
@@ -114,25 +117,26 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Buscador */}
+          {/* Barra de Búsqueda */}
           <div className="relative mb-10">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={22} />
             <input 
               type="text" 
-              placeholder={`Busqueda en ${estadoFiltro === 'todos' ? 'todos' : estadoFiltro === 'proceso' ? 'en proceso' : 'completados'}...`} 
-              className="w-full pl-16 pr-6 py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm outline-none font-medium text-[#001C38]"
+              placeholder={`Buscar por técnico, número o descripción...`} 
+              className="w-full pl-16 pr-6 py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm outline-none font-medium text-[#001C38] focus:ring-2 focus:ring-blue-500/10"
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
             />
           </div>
 
+          {/* Lista de Tarjetas */}
           <div className="space-y-6">
             {loading ? (
-              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-black uppercase tracking-widest text-xs italic">Sincronizando base de datos...</div>
+              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-black uppercase tracking-widest text-xs italic">Sincronizando con Supabase...</div>
             ) : filtrados.length > 0 ? (
               filtrados.map((s) => (
                 <div key={s.id} className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-transparent hover:border-[#2563eb]/20 transition-all flex flex-col md:flex-row justify-between items-start md:items-center">
-                  {/* ... resto del contenido de la tarjeta igual ... */}
+                  
                   <div className="flex-grow space-y-4 w-full">
                     <div className="flex items-center gap-4">
                       <div className="bg-[#001C38] text-white px-4 py-1 rounded-xl text-[10px] font-black tracking-[0.2em] uppercase">SERVICIO</div>
@@ -141,43 +145,37 @@ export default function ReportesPage() {
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 pt-2">
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Técnico asignado</span>
-                        <p className="text-sm font-bold text-[#001C38] uppercase">{s.tecnico_nombre || 'No finalizado'}</p>
+                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Técnico Responsable</span>
+                        <p className="text-sm font-bold text-[#001C38] uppercase">{s.tecnico_nombre || 'Pendiente de asignación'}</p>
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Fecha Inicio</span>
+                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Fecha Ingreso</span>
                         <p className="text-sm font-bold text-[#001C38]">{new Date(s.fecha_inicio).toLocaleString()}</p>
                       </div>
 
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Fecha y hora finalización</span>
-                        <p className="text-sm font-bold text-[#2563eb]">{s.fecha_fin ? new Date(s.fecha_fin).toLocaleString() : 'En curso...'}</p>
+                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Finalización</span>
+                        <p className="text-sm font-bold text-[#2563eb]">{s.fecha_fin ? new Date(s.fecha_fin).toLocaleString() : 'Pendiente de reporte...'}</p>
                       </div>
 
-                      <div className="flex flex-col md:col-span-2">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Descripción trabajo</span>
+                      <div className={`flex items-center gap-2 px-5 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest border-2 w-fit ${
+                        parseInt(s.estado) === 1 
+                        ? 'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20' 
+                        : 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/20'
+                      }`}>
+                        <div className={`w-2 h-2 rounded-full ${parseInt(s.estado) === 1 ? 'bg-[#34C759]' : 'bg-[#2563eb]'}`} />
+                        {parseInt(s.estado) === 1 ? 'Completado' : 'En Proceso'}
+                      </div>
+
+                      <div className="flex flex-col md:col-span-2 mt-2">
+                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Problema Reportado</span>
                         <p className="text-sm font-bold text-gray-500 italic border-l-4 border-gray-100 pl-4">{s.descripcion_trabajo}</p>
-                      </div>
-
-                      <div className="flex flex-col md:col-span-2">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Descripción informe técnico</span>
-                        <p className="text-sm font-bold text-[#001C38]">{s.descripcion_tecnico || 'Esperando informe final...'}</p>
-                      </div>
-
-                      <div className="flex items-center gap-4 pt-2">
-                        <div className={`flex items-center gap-2 px-5 py-1.5 rounded-full font-black text-[10px] uppercase tracking-widest border-2 ${
-                          parseInt(s.estado) === 1 
-                          ? 'bg-[#34C759]/10 text-[#34C759] border-[#34C759]/20' 
-                          : 'bg-[#2563eb]/10 text-[#2563eb] border-[#2563eb]/20'
-                        }`}>
-                          <div className={`w-2 h-2 rounded-full ${parseInt(s.estado) === 1 ? 'bg-[#34C759]' : 'bg-[#2563eb]'}`} />
-                          {parseInt(s.estado) === 1 ? 'Completado' : 'En Proceso'}
-                        </div>
                       </div>
                     </div>
                   </div>
 
+                  {/* Acción Ver PDF */}
                   <div className="mt-8 md:mt-0 md:ml-10 flex-shrink-0 w-full md:w-auto">
                     <button 
                       disabled={!s.documento_pdf}
@@ -188,30 +186,31 @@ export default function ReportesPage() {
                         : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                       }`}
                     >
-                      <FileText size={24} /> VER PDF
+                      <FileText size={24} /> VER REPORTE PDF
                     </button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-bold">No se encontraron resultados para este filtro.</div>
+              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-bold">No hay servicios que coincidan con la búsqueda.</div>
             )}
           </div>
         </div>
       </main>
 
-      {/* Modal para PDF igual... */}
+      {/* Modal Visor de PDF */}
       {modalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[92vh] rounded-[3rem] overflow-hidden flex flex-col shadow-2xl">
             <div className="bg-[#001C38] p-6 flex justify-between items-center text-white">
               <div className="flex items-center gap-4">
                 <FileText className="text-red-500" size={24} />
-                <span className="font-black uppercase text-sm tracking-tighter">Reporte Técnico Oficial</span>
+                <span className="font-black uppercase text-sm tracking-tighter italic">Visor de Reporte Técnico</span>
               </div>
               <button onClick={() => setModalOpen(false)} className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl transition-all"><X size={24} /></button>
             </div>
-            <iframe src={pdfUrl} className="flex-grow w-full border-none" />
+            {/* El src ya tiene el prefijo Base64, el navegador lo abrirá automáticamente */}
+            <iframe src={pdfUrl} title="Visor PDF" className="flex-grow w-full border-none" />
           </div>
         </div>
       )}

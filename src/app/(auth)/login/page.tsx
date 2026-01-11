@@ -2,7 +2,6 @@
 
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { Lock, User, Wrench, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 export default function LoginPage() {
@@ -27,6 +26,7 @@ export default function LoginPage() {
     setSuccessMsg('');
 
     try {
+      // CORRECCIÓN: La ruta debe ser /api/auth/login para coincidir con tu carpeta
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -36,24 +36,28 @@ export default function LoginPage() {
       const data = await response.json();
 
       if (response.ok) {
+        // Guardamos los datos que devuelve Supabase en el navegador
         localStorage.setItem('user', JSON.stringify(data.user));
         localStorage.setItem('isAuthenticated', 'true');
+        
+        // Redirigimos al panel principal
         router.push('/reportes');
       } else {
+        // Mostramos el mensaje de error que viene de la API (Usuario no encontrado, etc.)
         setError(data.error || 'Credenciales incorrectas');
       }
     } catch (err) {
-      setError('Error de conexión con el servidor');
+      setError('Error crítico de conexión. Verifica tu internet.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    // Fondo sutilmente más cálido
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full">
-        {/* Logo e Identidad - ACTUALIZADO A AZUL VIBRANTE */}
+        
+        {/* Identidad de Marca */}
         <div className="text-center mb-10">
           <div className="inline-flex items-center justify-center w-20 h-20 bg-[#1e40af] rounded-[2rem] shadow-xl mb-6 transform -rotate-3 border-4 border-[#fde68a]/30">
             <Wrench className="text-white" size={36} />
@@ -66,10 +70,10 @@ export default function LoginPage() {
           </p>
         </div>
 
-        {/* Tarjeta de Login */}
+        {/* Formulario de Acceso */}
         <div className="bg-white p-10 rounded-[2.5rem] shadow-2xl shadow-blue-900/10 border border-slate-100">
           
-          {/* Alertas */}
+          {/* Mensaje de Error */}
           {error && (
             <div className="mb-6 flex items-center gap-3 bg-red-50 border-l-4 border-red-500 p-4 rounded-r-xl text-red-700 text-sm animate-in fade-in slide-in-from-top-2">
               <AlertCircle size={18} />
@@ -77,6 +81,7 @@ export default function LoginPage() {
             </div>
           )}
 
+          {/* Mensaje de Éxito (Si viene por URL) */}
           {successMsg && (
             <div className="mb-6 flex items-center gap-3 bg-green-50 border-l-4 border-green-500 p-4 rounded-r-xl text-green-700 text-sm animate-in fade-in slide-in-from-top-2">
               <CheckCircle2 size={18} />
@@ -85,7 +90,7 @@ export default function LoginPage() {
           )}
           
           <form className="space-y-5" onSubmit={handleSubmit}>
-            {/* Campo Usuario */}
+            {/* Input Usuario */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#1e40af] transition-colors">
                 <User size={20} />
@@ -93,6 +98,7 @@ export default function LoginPage() {
               <input
                 type="text"
                 required
+                autoComplete="username"
                 className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm focus:ring-2 focus:ring-[#fde68a] focus:border-[#1e40af] focus:bg-white outline-none transition-all"
                 placeholder="Nombre de usuario"
                 value={user}
@@ -100,7 +106,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Campo Password */}
+            {/* Input Password */}
             <div className="relative group">
               <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#1e40af] transition-colors">
                 <Lock size={20} />
@@ -108,6 +114,7 @@ export default function LoginPage() {
               <input
                 type="password"
                 required
+                autoComplete="current-password"
                 className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm focus:ring-2 focus:ring-[#fde68a] focus:border-[#1e40af] focus:bg-white outline-none transition-all"
                 placeholder="Contraseña"
                 value={password}
@@ -115,7 +122,7 @@ export default function LoginPage() {
               />
             </div>
 
-            {/* Botón Submit - ACTUALIZADO A AZUL REY */}
+            {/* Botón de Entrada */}
             <button
               type="submit"
               disabled={loading}
@@ -125,29 +132,17 @@ export default function LoginPage() {
                 <div className="w-6 h-6 border-2 border-white/30 border-t-white rounded-full animate-spin" />
               ) : (
                 <>
-                  Iniciar Sesión
+                  Entrar al Sistema
                   <ArrowRight size={20} />
                 </>
               )}
             </button>
-
-            {/* Link a Registro */}
-            <div className="pt-6 text-center border-t border-slate-50">
-              <p className="text-sm text-slate-500 font-medium">
-                ¿No tienes una cuenta?{' '}
-                <Link 
-                  href="/register" 
-                  className="text-[#1e40af] font-black hover:text-[#1e3a8a] underline underline-offset-4 decoration-[#fde68a] decoration-2"
-                >
-                  Regístrate ahora
-                </Link>
-              </p>
-            </div>
           </form>
         </div>
         
+        {/* Footer de la página */}
         <p className="mt-8 text-center text-[10px] text-slate-400 font-bold uppercase tracking-[0.2em]">
-          © {new Date().getFullYear()} Electrónica Mantilla — Sistema de Gestión Web
+          © {new Date().getFullYear()} Electrónica Mantilla — Panel Administrativo
         </p>
       </div>
     </div>

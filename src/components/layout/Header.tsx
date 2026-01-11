@@ -6,15 +6,14 @@ import { useRouter, usePathname } from 'next/navigation';
 import { Menu, X, Wrench, User, LogOut, FileText } from 'lucide-react';
 
 export const Header = () => {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const [user, setUser] = useState<any>(null);
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
-  const isAuthPage = pathname === '/login' || pathname === '/register';
-  // NUEVO: Detectar si estamos en la página de reportes
+  // AJUSTE: Solo detectamos login (ya no hay registro)
+  const isAuthPage = pathname === '/login';
   const isReportPage = pathname.startsWith('/reportes');
 
   useEffect(() => {
@@ -22,12 +21,17 @@ export const Header = () => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     
+    // Verificamos sesión en el navegador
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
-      try { setUser(JSON.parse(storedUser)); } catch (e) { console.error("Error de sesión"); }
+      try { 
+        setUser(JSON.parse(storedUser)); 
+      } catch (e) { 
+        console.error("Sesión inválida"); 
+      }
     }
     return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+  }, [pathname]); // Se dispara al cambiar de página
 
   if (!mounted) return null;
 
@@ -35,11 +39,12 @@ export const Header = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('isAuthenticated');
     setUser(null);
-    router.push('/');
+    router.push('/login');
   };
 
-  // LÓGICA DE COLORES PARA REPORTES (Diferente al Home)
-  // En reportes usamos un fondo azul sólido siempre para mejor contraste
+  // ESTILOS DINÁMICOS:
+  // En reportes: Fondo azul sólido.
+  // En home: Transparente que se vuelve blanco al hacer scroll.
   const headerStyle = isReportPage 
     ? 'bg-[#1e3a8a] shadow-2xl py-3' 
     : (isScrolled || isAuthPage ? 'bg-white shadow-xl py-2' : 'bg-transparent py-4');
@@ -48,6 +53,10 @@ export const Header = () => {
     ? 'text-white' 
     : (isScrolled || isAuthPage ? 'text-[#1e3a8a]' : 'text-white');
 
+  const hoverColor = isReportPage || (!isScrolled && !isAuthPage) 
+    ? 'hover:text-[#fde68a]' 
+    : 'hover:text-blue-600';
+
   return (
     <header className={`fixed top-0 left-0 w-full z-50 transition-all duration-300 ${headerStyle}`}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -55,7 +64,7 @@ export const Header = () => {
           
           {/* LOGO */}
           <Link href="/" className="flex items-center group">
-            <div className="bg-gradient-to-br from-[#1e40af] to-[#1e3a8a] p-2.5 rounded-xl border border-[#fde68a]/30 shadow-lg">
+            <div className="bg-gradient-to-br from-[#1e40af] to-[#1e3a8a] p-2.5 rounded-xl border border-[#fde68a]/30 shadow-lg group-hover:scale-110 transition-transform">
               <Wrench className="text-white" size={24} />
             </div>
             <div className="ml-3 flex flex-col leading-none">
@@ -64,32 +73,44 @@ export const Header = () => {
             </div>
           </Link>
 
-          {/* NAVEGACIÓN DESKTOP */}
-          <nav className="hidden md:flex items-center space-x-8">
-            <Link href="/" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${textColor} hover:text-[#fde68a]`}>
+          {/* NAVEGACIÓN */}
+          <nav className="flex items-center space-x-8">
+            <Link href="/" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${textColor} ${hoverColor}`}>
               Inicio
             </Link>
 
             {user ? (
               <div className="flex items-center space-x-6 border-l border-white/20 pl-6">
-                <div className={`flex items-center gap-2 ${textColor}`}>
+                <div className={`hidden sm:flex items-center gap-2 ${textColor}`}>
                   <User size={16} className="text-[#fde68a]" />
-                  <span className="text-[11px] font-bold uppercase tracking-tight">{user.usuario || 'Técnico'}</span>
+                  <span className="text-[11px] font-bold uppercase tracking-tight">
+                    {user.nombre_completo?.split(' ')[0] || 'Admin'}
+                  </span>
                 </div>
                 
-                <Link href="/reportes" className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-widest ${pathname === '/reportes' ? 'text-[#fde68a]' : textColor}`}>
+                <Link 
+                  href="/reportes" 
+                  className={`flex items-center gap-2 text-[11px] font-black uppercase tracking-widest transition-all ${
+                    isReportPage ? 'text-[#fde68a] scale-105' : textColor + ' ' + hoverColor
+                  }`}
+                >
                   <FileText size={16} />
-                  Reportes
+                  Panel
                 </Link>
 
-                <button onClick={handleLogout} className="bg-[#fde68a] text-[#1e3a8a] px-5 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-yellow-400 transition-all flex items-center gap-2">
+                <button 
+                  onClick={handleLogout} 
+                  className="bg-[#fde68a] text-[#1e3a8a] px-4 py-2 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white hover:scale-105 transition-all flex items-center gap-2 shadow-lg shadow-yellow-500/20"
+                >
                   <LogOut size={14} /> Salir
                 </button>
               </div>
             ) : (
-              <Link href="/login" className="bg-[#fde68a] text-[#1e3a8a] px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest">
-                Ingresar
-              </Link>
+              !isAuthPage && (
+                <Link href="/login" className="bg-[#fde68a] text-[#1e3a8a] px-6 py-2.5 rounded-lg text-[10px] font-black uppercase tracking-widest hover:bg-white transition-all shadow-lg shadow-yellow-500/10">
+                  Ingresar
+                </Link>
+              )
             )}
           </nav>
         </div>

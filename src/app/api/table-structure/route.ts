@@ -1,38 +1,37 @@
 import { NextResponse } from 'next/server';
-import mysql from 'mysql2/promise';
-
-const dbConfig = {
-  host: process.env.DB_HOST,
-  port: parseInt(process.env.DB_PORT!),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-};
+import { supabase } from '@/lib/supabase'; // Tu cliente de Supabase
 
 export async function GET() {
   try {
-    const connection = await mysql.createConnection(dbConfig);
-    
-    // Obtener estructura de la tabla users
-    const [tableStructure] = await connection.execute('DESCRIBE users');
-    
-    // Obtener datos existentes
-    const [existingUsers] = await connection.execute('SELECT id, email, user, created_at FROM users LIMIT 5');
-    
-    await connection.end();
-    
+
+    const { data: tableStructure, error: structureError } = await supabase
+      .rpc('get_table_structure', { table_name_input: 'usersweb' }); 
+      
+    const { data: columns, error: colError } = await supabase
+      .from('usersweb')
+      .select('*')
+      .limit(0); 
+
+    const { data: existingUsers, error: dataError } = await supabase
+      .from('usersweb')
+      .select('WEB_ID, WEB_USU, WEB_FEC_CREADO')
+      .limit(5);
+
+    if (colError || dataError) throw colError || dataError;
+
     return NextResponse.json({ 
       success: true,
-      tableStructure,
+      mensaje: "Inspección de tabla usersweb realizada",
+      columnas: columns ? Object.keys(columns) : [],
       existingUsers
     });
     
   } catch (error: any) {
-    console.error('Error:', error);
+    console.error('❌ Error en inspección:', error.message);
     return NextResponse.json(
       { 
-        success: false,
-        error: error.message
+        success: false, 
+        error: error.message 
       },
       { status: 500 }
     );
