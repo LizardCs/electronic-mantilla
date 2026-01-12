@@ -33,13 +33,18 @@ export const Header = () => {
 
   if (!mounted) return null;
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+  try {
+    await fetch('/api/auth/logout', { method: 'POST' });
     localStorage.removeItem('user');
     localStorage.removeItem('isAuthenticated');
-    document.cookie = "isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     setUser(null);
-    router.push('/'); 
-  };
+    router.push('/');
+    router.refresh(); 
+  } catch (error) {
+    console.error("Error al cerrar sesión", error);
+  }
+};
 
   const headerStyle = isReportPage 
     ? 'bg-[#1e3a8a] shadow-2xl py-3' 
