@@ -2,19 +2,15 @@
 
 :root {
   --background: #ffffff;
-  --foreground: #0f172a; /* Navy Mate: Un azul casi negro, muy relajante */
-  
-  /* Paleta Electrónica Mantilla - Versión Descanso Visual */
-  --color-navy-mate: #0f172a;    /* Color principal de texto y secciones oscuras */
-  --color-slate-deep: #1e293b;   /* Azul grisáceo para degradados y cards */
-  --color-yellow-soft: #fde68a;  /* Amarillo crema: Menos brillante, más elegante */
-  --color-success: #16a34a;      /* Verde más natural */
-  
-  /* Nuevos colores específicos para reportes */
-  --color-red-soft: #fecaca;     /* Rojo suave para botones de PDF */
-  --color-red-deep: #dc2626;     /* Rojo más intenso para hover */
-  --color-green-soft: #bbf7d0;   /* Verde suave para botones de descarga */
-  --color-green-deep: #16a34a;   /* Verde intenso para hover */
+  --foreground: #0f172a;
+  --color-navy-mate: #0f172a;    
+  --color-slate-deep: #1e293b;   
+  --color-yellow-soft: #fde68a; 
+  --color-success: #16a34a;
+  --color-red-soft: #fecaca;     
+  --color-red-deep: #dc2626;     
+  --color-green-soft: #bbf7d0;  
+  --color-green-deep: #16a34a; 
 }
 
 @theme inline {
@@ -29,7 +25,6 @@
   --color-green-soft: var(--color-green-soft);
   --color-green-deep: var(--color-green-deep);
   
-  /* Animaciones personalizadas */
   --animate-fade-in: fade-in 0.3s ease-out;
   --animate-fade-out: fade-out 0.3s ease-in;
   --animate-spin-slow: spin 1.5s linear infinite;
@@ -37,7 +32,7 @@
 }
 
 body {
-  background: #f8fafc; /* Fondo blanco-grisáceo para reducir el reflejo */
+  background: #f8fafc; 
   color: var(--foreground);
   font-family: var(--font-sans);
   -webkit-font-smoothing: antialiased;
@@ -48,7 +43,6 @@ html {
   scroll-behavior: smooth;
 }
 
-/* --- ANIMACIONES --- */
 @keyframes fade-in {
   from {
     opacity: 0;
@@ -89,9 +83,6 @@ html {
   }
 }
 
-/* --- CLASES DE BOTONES REFINADAS --- */
-
-/* Botón Amarillo (Principal en el Hero) */
 .btn-primary {
   background: var(--color-yellow-soft);
   color: var(--color-navy-mate);
@@ -108,12 +99,11 @@ html {
 }
 
 .btn-primary:hover {
-  background: #fcd34d; /* Amarillo un poquito más intenso al pasar el mouse */
+  background: #fcd34d;
   transform: translateY(-2px);
   box-shadow: 0 8px 20px rgba(253, 230, 138, 0.4);
 }
 
-/* Botón Azul Marino (Usado en el Header o Secciones Claras) */
 .btn-vibrant {
   background: var(--color-navy-mate);
   color: white;
@@ -134,7 +124,7 @@ html {
   box-shadow: 0 8px 20px rgba(15, 23, 42, 0.2);
 }
 
-/* Botón de Soporte (Transparente) */
+
 .btn-secondary {
   border: 2px solid rgba(255, 255, 255, 0.3);
   color: white;
@@ -152,7 +142,6 @@ html {
   border-color: white;
 }
 
-/* Botón VER PDF (Estilo específico) */
 .btn-pdf-view {
   background: var(--color-red-soft);
   color: var(--color-red-deep);
@@ -187,7 +176,6 @@ html {
   box-shadow: none;
 }
 
-/* Botón DESCARGAR (Estilo específico) */
 .btn-pdf-download {
   background: var(--color-green-soft);
   color: var(--color-green-deep);
@@ -222,13 +210,11 @@ html {
   box-shadow: none;
 }
 
-/* Efecto de focus profesional */
 button:focus-visible, a:focus-visible {
   outline: 2px solid var(--color-yellow-soft);
   outline-offset: 2px;
 }
 
-/* --- ESTILOS PARA EL MODAL DE PDF --- */
 .modal-backdrop {
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
@@ -241,7 +227,6 @@ button:focus-visible, a:focus-visible {
   border: 1px solid rgba(255, 255, 255, 0.1);
 }
 
-/* Estilos para el PDF en el iframe */
 .pdf-container {
   background: linear-gradient(45deg, #f8fafc 25%, transparent 25%), 
               linear-gradient(-45deg, #f8fafc 25%, transparent 25%), 
@@ -251,14 +236,13 @@ button:focus-visible, a:focus-visible {
   background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
 }
 
-/* Estilos para los estados de carga */
+
 .loading-shimmer {
   background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
   background-size: 1000px 100%;
   animation: shimmer 2s infinite linear;
 }
 
-/* Scrollbar personalizado */
 .custom-scrollbar::-webkit-scrollbar {
   width: 8px;
 }
@@ -277,7 +261,6 @@ button:focus-visible, a:focus-visible {
   background: var(--color-navy-mate);
 }
 
-/* Estilos para tarjetas de servicio */
 .service-card {
   background: linear-gradient(145deg, #ffffff, #f0f4f8);
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -295,7 +278,6 @@ button:focus-visible, a:focus-visible {
     0 10px 15px -8px rgba(15, 23, 42, 0.05);
 }
 
-/* Estados del servicio */
 .status-badge {
   font-variant-numeric: tabular-nums;
   letter-spacing: 0.1em;
@@ -306,7 +288,6 @@ button:focus-visible, a:focus-visible {
   transform: scale(1.05);
 }
 
-/* Responsive adjustments */
 @media (max-width: 768px) {
   .modal-content {
     margin: 1rem;
@@ -329,7 +310,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-/* Mejoras de accesibilidad */
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,
@@ -340,7 +320,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-/* High contrast mode support */
 @media (prefers-contrast: high) {
   .btn-pdf-view,
   .btn-pdf-download {
@@ -348,7 +327,6 @@ button:focus-visible, a:focus-visible {
   }
 }
 
-/* Dark mode support */
 @media (prefers-color-scheme: dark) {
   .service-card {
     background: linear-gradient(145deg, #1e293b, #0f172a);

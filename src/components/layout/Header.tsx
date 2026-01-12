@@ -11,11 +11,9 @@ export const Header = () => {
   const [mounted, setMounted] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
-
   const isAuthPage = pathname === '/login';
   const isReportPage = pathname.startsWith('/reportes');
 
-  // 1. Sincronización de sesión y scroll
   useEffect(() => {
     setMounted(true);
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
@@ -38,21 +36,13 @@ export const Header = () => {
 
   if (!mounted) return null;
 
-  // 2. Función de Cierre de Sesión mejorada
   const handleLogout = async () => {
     try {
-      // Limpieza inmediata en el cliente para evitar parpadeos
       localStorage.removeItem('user');
       localStorage.removeItem('isAuthenticated');
       setUser(null);
-
-      // Llamada al servidor para borrar la cookie HttpOnly
       await fetch('/api/auth/logout', { method: 'POST' });
-
-      // Redirigir al Inicio y refrescar para que el Middleware se entere
       router.push('/');
-      
-      // Forzamos un refresco de rutas para limpiar el caché de Next.js
       setTimeout(() => {
         router.refresh();
       }, 100);
@@ -63,7 +53,6 @@ export const Header = () => {
     }
   };
 
-  // 3. Definición de estilos dinámicos
   const headerStyle = isReportPage
     ? 'bg-[#1e3a8a] shadow-2xl py-3'
     : (isScrolled || isAuthPage ? 'bg-white shadow-xl py-2' : 'bg-transparent py-4');
@@ -128,7 +117,6 @@ export const Header = () => {
                 </button>
               </div>
             ) : (
-              /* Botón de Ingreso (Solo si no estamos en la página de login) */
               !isAuthPage && (
                 <Link 
                   href="/login" 

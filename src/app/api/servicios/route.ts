@@ -12,8 +12,6 @@ export async function GET() {
       throw error;
     }
 
-    // 2. Retornamos los datos directamente
-    // Supabase ya devuelve un array de objetos con las llaves en MAYÚSCULAS
     return NextResponse.json(servicios);
 
   } catch (error: any) {
@@ -23,5 +21,4 @@ export async function GET() {
       { status: 500 }
     );
   }
-  // Ya no necesitamos 'finally' porque Supabase maneja las conexiones por HTTP
 }

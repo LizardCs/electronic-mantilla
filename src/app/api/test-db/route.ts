@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase'; // Tu cliente configurado
+import { supabase } from '@/lib/supabase';
 
 export async function GET() {
   try {
-    // 1. Obtener los nombres de las columnas (Simulando el DESCRIBE)
-    // Pedimos un registro para extraer las llaves (keys) de la tabla
+
     const { data: schemaSample, error: schemaError } = await supabase
       .from('usersweb')
       .select('*')
@@ -12,7 +11,6 @@ export async function GET() {
 
     if (schemaError) throw schemaError;
 
-    // 2. Obtener los datos reales (Limitado a 5 como en tu código original)
     const { data: existingUsers, error: dataError } = await supabase
       .from('usersweb')
       .select('WEB_ID, WEB_USU, WEB_NOMBRES, WEB_FEC_CREADO')
@@ -22,7 +20,6 @@ export async function GET() {
 
     return NextResponse.json({ 
       success: true,
-      // Extraemos los nombres de las columnas del primer resultado encontrado
       tableStructure: schemaSample.length > 0 ? Object.keys(schemaSample[0]) : [],
       existingUsers
     });

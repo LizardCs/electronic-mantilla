@@ -5,12 +5,8 @@ import {
   Wrench, Truck, ShieldCheck, Zap, Star
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
-
-// Importaciones de Swiper
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Autoplay, EffectCoverflow } from 'swiper/modules';
-
-// Estilos de Swiper
 import 'swiper/css';
 import 'swiper/css/effect-coverflow';
 
@@ -146,8 +142,6 @@ export default function HomePage() {
             </div>
         </section>
       </main>
-      
-      {/* Footer eliminado según requerimiento */}
     </div>
   );
 }

@@ -20,7 +20,6 @@ export default function ReportesPage() {
   const fetchData = async () => {
     setLoading(true);
     try {
-      // Consumimos las APIs que migramos a Supabase
       const [resServ, resRep] = await Promise.all([
         fetch('/api/servicios'),
         fetch('/api/reportes')
@@ -39,7 +38,6 @@ export default function ReportesPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // Unificamos las dos tablas (Servicios + Reportes)
   const datosMapeados = servicios.map(s => {
     const rep = reportes.find(r => r.REP_SEV_NUM === s.SERV_NUM);
     return {
@@ -51,16 +49,14 @@ export default function ReportesPage() {
       tecnico_nombre: s.SERV_NOM_REC,
       descripcion_tecnico: rep?.REP_TIPO,
       fecha_fin: rep?.REP_FECHA,
-      documento_pdf: rep?.REP_DOC // Ya viene con el prefijo Base64 desde la API
+      documento_pdf: rep?.REP_DOC
     };
   });
 
-  // Estadísticas para las tarjetas
   const total = datosMapeados.length;
   const enProceso = datosMapeados.filter(s => parseInt(s.estado) === 0).length;
   const completados = datosMapeados.filter(s => parseInt(s.estado) === 1).length;
 
-  // Lógica de filtrado
   const filtrados = datosMapeados.filter(s => {
     const cumpleTexto = 
       s.tecnico_nombre?.toLowerCase().includes(filtro.toLowerCase()) ||
@@ -209,7 +205,6 @@ export default function ReportesPage() {
               </div>
               <button onClick={() => setModalOpen(false)} className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl transition-all"><X size={24} /></button>
             </div>
-            {/* El src ya tiene el prefijo Base64, el navegador lo abrirá automáticamente */}
             <iframe src={pdfUrl} title="Visor PDF" className="flex-grow w-full border-none" />
           </div>
         </div>
