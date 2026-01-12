@@ -55,7 +55,7 @@ export default function HomePage() {
             <div className="flex flex-col lg:flex-row items-center justify-between gap-12">
                 <div className="flex flex-col items-start w-full lg:w-1/2">
                     <div className="mb-6">
-                        <h1 className="text-3xl md:text-5xl font-black text-white tracking-[0.15em] uppercase leading-none">ELECTRONICA</h1>
+                        <h1 className="text-3xl md:text-5xl font-black text-white tracking-[0.15em] uppercase leading-none">ELECTRÓNICA</h1>
                         <div className="text-6xl md:text-8xl font-bold text-[#fde68a] italic leading-tight -mt-2 ml-2">Mantilla</div>
                         <div className="text-xs md:text-sm font-bold text-white tracking-[0.3em] uppercase opacity-90 ml-3 mt-1 border-l-4 border-[#fde68a] pl-4">Centro de Servicio Autorizado</div>
                     </div>
