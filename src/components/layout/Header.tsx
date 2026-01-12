@@ -12,7 +12,6 @@ export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
 
-  // AJUSTE: Solo detectamos login (ya no hay registro)
   const isAuthPage = pathname === '/login';
   const isReportPage = pathname.startsWith('/reportes');
 
@@ -21,7 +20,6 @@ export const Header = () => {
     const handleScroll = () => setIsScrolled(window.scrollY > 20);
     window.addEventListener('scroll', handleScroll);
     
-    // Verificamos sesión en el navegador
     const storedUser = localStorage.getItem('user');
     if (storedUser) {
       try { 
@@ -31,20 +29,18 @@ export const Header = () => {
       }
     }
     return () => window.removeEventListener('scroll', handleScroll);
-  }, [pathname]); // Se dispara al cambiar de página
+  }, [pathname]);
 
   if (!mounted) return null;
 
   const handleLogout = () => {
     localStorage.removeItem('user');
     localStorage.removeItem('isAuthenticated');
+    document.cookie = "isAuthenticated=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     setUser(null);
-    router.push('/login');
+    router.push('/'); 
   };
 
-  // ESTILOS DINÁMICOS:
-  // En reportes: Fondo azul sólido.
-  // En home: Transparente que se vuelve blanco al hacer scroll.
   const headerStyle = isReportPage 
     ? 'bg-[#1e3a8a] shadow-2xl py-3' 
     : (isScrolled || isAuthPage ? 'bg-white shadow-xl py-2' : 'bg-transparent py-4');
@@ -62,7 +58,6 @@ export const Header = () => {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           
-          {/* LOGO */}
           <Link href="/" className="flex items-center group">
             <div className="bg-gradient-to-br from-[#1e40af] to-[#1e3a8a] p-2.5 rounded-xl border border-[#fde68a]/30 shadow-lg group-hover:scale-110 transition-transform">
               <Wrench className="text-white" size={24} />
@@ -73,7 +68,6 @@ export const Header = () => {
             </div>
           </Link>
 
-          {/* NAVEGACIÓN */}
           <nav className="flex items-center space-x-8">
             <Link href="/" className={`text-[11px] font-black uppercase tracking-widest transition-colors ${textColor} ${hoverColor}`}>
               Inicio

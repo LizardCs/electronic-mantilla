@@ -1,10 +1,9 @@
 'use client';
 
-import { useState, useEffect, Suspense } from 'react'; // Importamos Suspense
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Lock, User, Wrench, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
-// 1. Creamos un componente interno para el contenido del login
 function LoginForm() {
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
@@ -135,7 +134,6 @@ function LoginForm() {
   );
 }
 
-// 2. Export predeterminado que envuelve todo en un Suspense Boundary
 export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-slate-50 py-12 px-4 sm:px-6 lg:px-8">
