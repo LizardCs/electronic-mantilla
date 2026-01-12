@@ -1,24 +1,29 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  const authCookie = request.cookies.get('isAuthenticated'); 
+// CAMBIO: La función ahora debe llamarse "proxy"
+export function proxy(request: NextRequest) {
+  // 1. Extraemos el VALOR de la cookie
+  const isAuthenticated = request.cookies.get('isAuthenticated')?.value === 'true';
   const { pathname } = request.nextUrl;
 
+  // 2. Lógica de protección para /reportes
   if (pathname.startsWith('/reportes')) {
-    if (!authCookie) {
+    if (!isAuthenticated) {
       console.log('🚫 Acceso denegado a reportes. Redirigiendo a Login...');
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
-  if (pathname === '/login' && authCookie) {
+  // 3. Lógica para evitar el login si ya está autenticado
+  if (pathname === '/login' && isAuthenticated) {
     return NextResponse.redirect(new URL('/reportes', request.url));
   }
 
   return NextResponse.next();
 }
 
+// Mantenemos la configuración del matcher igual
 export const config = {
   matcher: ['/reportes/:path*', '/login'],
 };
