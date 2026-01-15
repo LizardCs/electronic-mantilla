@@ -128,7 +128,7 @@ export default function ReportesPage() {
           {/* Lista de Tarjetas */}
           <div className="space-y-6">
             {loading ? (
-              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-black uppercase tracking-widest text-xs italic">Sincronizando con Supabase...</div>
+              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-black uppercase tracking-widest text-xs italic">Actualizando...</div>
             ) : filtrados.length > 0 ? (
               filtrados.map((s) => (
                 <div key={s.id} className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-transparent hover:border-[#2563eb]/20 transition-all flex flex-col md:flex-row justify-between items-start md:items-center">
