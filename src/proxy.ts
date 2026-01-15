@@ -7,7 +7,7 @@ export function proxy(request: NextRequest) {
 
   if (pathname.startsWith('/reportes')) {
     if (!isAuthenticated) {
-      console.log('🚫 Acceso denegado a reportes. Redirigiendo a Login...');
+      //console.log('🚫 Acceso denegado a reportes. Redirigiendo a Login...');
       return NextResponse.redirect(new URL('/login', request.url));
     }
   }
