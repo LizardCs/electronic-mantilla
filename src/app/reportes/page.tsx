@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { Header } from '@/components/layout/Header';
 import { 
   Search, FileText, RefreshCw, ClipboardList, 
-  Clock, CheckCircle2, X
+  Clock, CheckCircle2, X, Trash2 
 } from 'lucide-react';
 
 export default function ReportesPage() {
@@ -14,8 +14,15 @@ export default function ReportesPage() {
   const [loading, setLoading] = useState(true);
   const [filtro, setFiltro] = useState('');
   const [estadoFiltro, setEstadoFiltro] = useState<'todos' | 'proceso' | 'completado'>('todos');
+  
   const [modalOpen, setModalOpen] = useState(false);
   const [pdfUrl, setPdfUrl] = useState('');
+  const [deleteModal, setDeleteModal] = useState({ 
+    show: false, 
+    id: '', 
+    num: '', 
+    isSuccess: false 
+  });
 
   const fetchData = async () => {
     setLoading(true);
@@ -37,6 +44,32 @@ export default function ReportesPage() {
   };
 
   useEffect(() => { fetchData(); }, []);
+
+
+  const openDeleteConfirm = (id: string, num: string) => {
+    setDeleteModal({ show: true, id, num, isSuccess: false });
+  };
+
+  const handleConfirmDelete = async () => {
+    try {
+      const res = await fetch(`/api/servicios?id=${deleteModal.id}&num=${deleteModal.num}`, {
+        method: 'DELETE',
+      });
+
+      if (res.ok) {
+        setDeleteModal(prev => ({ ...prev, isSuccess: true }));
+        fetchData(); // Refrescar lista de fondo
+      } else {
+        alert("Error al eliminar el registro");
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const closeDeleteModal = () => {
+    setDeleteModal({ show: false, id: '', num: '', isSuccess: false });
+  };
 
   const datosMapeados = servicios.map(s => {
     const rep = reportes.find(r => r.REP_SEV_NUM === s.SERV_NUM);
@@ -86,7 +119,6 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Tarjetas de Resumen Interactivas */}
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
             <button 
               onClick={() => setEstadoFiltro('todos')}
@@ -113,7 +145,6 @@ export default function ReportesPage() {
             </button>
           </div>
 
-          {/* Barra de Búsqueda */}
           <div className="relative mb-10">
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={22} />
             <input 
@@ -125,7 +156,6 @@ export default function ReportesPage() {
             />
           </div>
 
-          {/* Lista de Tarjetas */}
           <div className="space-y-6">
             {loading ? (
               <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-black uppercase tracking-widest text-xs italic">Actualizando...</div>
@@ -171,18 +201,24 @@ export default function ReportesPage() {
                     </div>
                   </div>
 
-                  {/* Acción Ver PDF */}
-                  <div className="mt-8 md:mt-0 md:ml-10 flex-shrink-0 w-full md:w-auto">
+                  <div className="mt-8 md:mt-0 md:ml-10 flex flex-col gap-3 w-full md:w-auto">
                     <button 
                       disabled={!s.documento_pdf}
                       onClick={() => { setPdfUrl(s.documento_pdf); setModalOpen(true); }}
-                      className={`w-full md:w-auto flex items-center justify-center gap-3 px-10 py-5 rounded-[2rem] font-black text-xs transition-all shadow-xl border ${
+                      className={`flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] transition-all shadow-lg border ${
                         s.documento_pdf 
-                        ? 'bg-red-50 text-red-600 border-red-100 hover:bg-red-600 hover:text-white' 
+                        ? 'bg-yellow-100 text-gray-800 border-yellow-200 hover:bg-yellow-400 hover:text-black hover:border-yellow-400' 
                         : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
                       }`}
                     >
-                      <FileText size={24} /> VER REPORTE PDF
+                      <FileText size={20} /> VER REPORTE PDF
+                    </button>
+
+                    <button 
+                      onClick={() => openDeleteConfirm(s.id, s.numero_servicio)}
+                      className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] transition-all bg-white text-gray-400 border border-gray-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm"
+                    >
+                      <Trash2 size={20} /> ELIMINAR REGISTRO
                     </button>
                   </div>
                 </div>
@@ -194,18 +230,76 @@ export default function ReportesPage() {
         </div>
       </main>
 
-      {/* Modal Visor de PDF */}
       {modalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[92vh] rounded-[3rem] overflow-hidden flex flex-col shadow-2xl">
             <div className="bg-[#001C38] p-6 flex justify-between items-center text-white">
               <div className="flex items-center gap-4">
-                <FileText className="text-red-500" size={24} />
+                <FileText className="text-yellow-500" size={24} />
                 <span className="font-black uppercase text-sm tracking-tighter italic">Visor de Reporte Técnico</span>
               </div>
               <button onClick={() => setModalOpen(false)} className="p-3 bg-red-500 hover:bg-red-600 text-white rounded-2xl transition-all"><X size={24} /></button>
             </div>
             <iframe src={pdfUrl} title="Visor PDF" className="flex-grow w-full border-none" />
+          </div>
+        </div>
+      )}
+
+      {deleteModal.show && (
+        <div className="fixed inset-0 z-[110] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200">
+            
+            {!deleteModal.isSuccess ? (
+              <>
+                <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-2">
+                  <Trash2 size={40} />
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">¿Estás seguro?</h3>
+                  <p className="text-gray-500 text-sm font-medium mt-2">
+                    Se eliminará el servicio <span className="font-bold text-red-600">#{deleteModal.num}</span>.
+
+                    Esta acción no se puede deshacer.
+                  </p>
+                </div>
+
+                <div className="flex flex-col w-full gap-3">
+                  <button 
+                    onClick={handleConfirmDelete}
+                    className="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
+                  >
+                    Sí, eliminar registro
+                  </button>
+                  <button 
+                    onClick={closeDeleteModal}
+                    className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors"
+                  >
+                    Cancelar
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-2">
+                  <CheckCircle2 size={40} className="animate-bounce" />
+                </div>
+                
+                <div>
+                  <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">Listo</h3>
+                  <p className="text-gray-500 text-sm font-medium mt-2">
+                    El registro ha sido eliminado correctamente.
+                  </p>
+                </div>
+
+                <button 
+                  onClick={closeDeleteModal}
+                  className="w-full py-4 bg-[#001C38] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:opacity-90 transition-opacity"
+                >
+                  Aceptar
+                </button>
+              </>
+            )}
           </div>
         </div>
       )}
