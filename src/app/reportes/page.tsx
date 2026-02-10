@@ -2,16 +2,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation'; // Importamos router
+import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { 
   Search, FileText, RefreshCw, ClipboardList, 
   Clock, CheckCircle2, X, Trash2, PlusCircle, 
-  LayoutList, Download 
+  LayoutList, Download, Edit
 } from 'lucide-react';
 
 export default function ReportesPage() {
-  const router = useRouter(); // Hook para navegación
+  const router = useRouter();
   const [servicios, setServicios] = useState<any[]>([]);
   const [reportes, setReportes] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -48,16 +48,15 @@ export default function ReportesPage() {
 
   useEffect(() => { fetchData(); }, []);
 
-  // --- FUNCION PARA EXPORTAR A EXCEL/CSV (NUEVO) ---
   const handleExport = () => {
     const headers = ["Numero", "Tecnico", "Cliente", "Estado", "Fecha Ingreso", "Descripcion"];
     const rows = filtrados.map(s => [
       s.numero_servicio,
       s.tecnico_nombre,
-      s.cliente_nombre || "N/A", // Asegúrate de mapear esto si viene del backend
+      s.cliente_nombre || "N/A", 
       parseInt(s.estado) === 1 ? "Completado" : "En Proceso",
       new Date(s.fecha_inicio).toLocaleDateString(),
-      `"${s.descripcion_trabajo}"` // Comillas para evitar errores con comas en el texto
+      `"${s.descripcion_trabajo}"` 
     ]);
 
     const csvContent = "data:text/csv;charset=utf-8," 
@@ -107,7 +106,7 @@ export default function ReportesPage() {
       descripcion_trabajo: s.SERV_DESCRIPCION,
       fecha_inicio: s.SERV_FECH_ASIG,
       tecnico_nombre: s.SERV_NOM_REC,
-      cliente_nombre: s.SERV_NOM_CLI, // Asegúrate de que tu API traiga esto
+      cliente_nombre: s.SERV_NOM_CLI, 
       descripcion_tecnico: rep?.REP_TIPO,
       fecha_fin: rep?.REP_FECHA,
       documento_pdf: rep?.REP_DOC
@@ -138,10 +137,9 @@ export default function ReportesPage() {
       <main className="flex-grow pt-28 pb-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-6xl mx-auto">
           
-          {/* --- BOTONES DE NAVEGACIÓN SUPERIOR (NUEVO) --- */}
           <div className="flex flex-wrap gap-4 mb-8">
             <button 
-              onClick={() => {}} // Ya estás en reportes, quizás recargar o nada
+              onClick={() => router.refresh()}
               className="flex items-center gap-2 px-6 py-3 bg-[#001C38] text-white rounded-xl shadow-lg shadow-blue-900/20 font-bold transition-transform hover:scale-105"
             >
               <LayoutList size={20} />
@@ -149,7 +147,7 @@ export default function ReportesPage() {
             </button>
             
             <button 
-              onClick={() => router.push('/asignar')} // Asumiendo que esta es la ruta
+              onClick={() => router.push('/asignar')} 
               className="flex items-center gap-2 px-6 py-3 bg-white text-[#001C38] border border-gray-200 rounded-xl shadow-sm font-bold hover:bg-gray-50 transition-all hover:border-blue-200"
             >
               <PlusCircle size={20} className="text-[#2563eb]" />
@@ -162,7 +160,6 @@ export default function ReportesPage() {
               Gestión de Reportes
             </h1>
             <div className="flex gap-3">
-              {/* Botón Exportar */}
               <button onClick={handleExport} className="p-3 bg-green-50 rounded-xl shadow-sm border border-green-100 text-green-600 hover:bg-green-100 transition-all" title="Exportar CSV">
                 <Download size={20} />
               </button>
@@ -244,7 +241,7 @@ export default function ReportesPage() {
                           </div>
                       </div>
 
-                      {/* CLIENTE (Si lo tienes) */}
+                      {/* CLIENTE */}
                       {s.cliente_nombre && (
                          <div className="flex flex-col">
                            <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Cliente</span>
@@ -260,6 +257,17 @@ export default function ReportesPage() {
                   </div>
 
                   <div className="mt-8 md:mt-0 md:ml-10 flex flex-col gap-3 w-full md:w-auto">
+                    
+                    {/* 👇 NUEVO BOTÓN DE EDITAR (Solo visible si el estado es En Proceso (0)) 👇 */}
+                    {parseInt(s.estado) === 0 && (
+                      <button 
+                        onClick={() => router.push(`/asignar?id=${s.numero_servicio}`)}
+                        className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] transition-all bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 hover:border-blue-400 shadow-sm"
+                      >
+                        <Edit size={20} /> EDITAR
+                      </button>
+                    )}
+
                     <button 
                       disabled={!s.documento_pdf}
                       onClick={() => { setPdfUrl(s.documento_pdf); setModalOpen(true); }}
@@ -288,6 +296,7 @@ export default function ReportesPage() {
         </div>
       </main>
 
+      {/* MODAL VISOR PDF */}
       {modalOpen && (
         <div className="fixed inset-0 z-[100] bg-black/70 backdrop-blur-md flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-5xl h-[92vh] rounded-[3rem] overflow-hidden flex flex-col shadow-2xl animate-in zoom-in-95 duration-200">
@@ -307,6 +316,7 @@ export default function ReportesPage() {
         </div>
       )}
 
+      {/* MODAL DE ELIMINAR */}
       {deleteModal.show && (
         <div className="fixed inset-0 z-[110] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200">

@@ -1,8 +1,8 @@
 // app/asignar/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, Suspense } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { supabase } from '@/lib/supabase';
 import { 
@@ -11,9 +11,14 @@ import {
   CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 
-export default function AsignarServicioPage() {
+function FormularioDinamico() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   
+  // 👇 DETECTAMOS SI ESTAMOS EN MODO EDICIÓN 👇
+  const editId = searchParams.get('id');
+  const isEditMode = !!editId; 
+
   const [loading, setLoading] = useState(false);
   const [tecnicos, setTecnicos] = useState<any[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
@@ -41,42 +46,75 @@ export default function AsignarServicioPage() {
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       try {
+        // 1. CARGAR TÉCNICOS
         const resTec = await fetch('/api/tecnicos');
         if (resTec.ok) {
           const dataTec = await resTec.json();
-          const listaTecnicos = Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []);
-          setTecnicos(listaTecnicos);
+          setTecnicos(Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []));
         }
 
-        const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
-        
-        if (sesionLocal) {
-          const webUser = JSON.parse(sesionLocal);
-          const cedulaWeb = webUser.WEB_CED || webUser.cedula; 
+        // 2. ¿ES EDICIÓN O ES NUEVO?
+        if (isEditMode) {
+          // Si es edición, buscamos los datos del servicio en Supabase
+          const { data: serv, error } = await supabase
+            .from('serviciostecnicos')
+            .select('*')
+            .eq('SERV_NUM', editId)
+            .single();
 
-          if (cedulaWeb) {
-            const { data: webAdmin, error } = await supabase
-              .from('usersweb')
-              .select('WEB_CED, WEB_NOMBRES, WEB_APELLIDOS')
-              .eq('WEB_CED', cedulaWeb)
-              .single();
+          if (serv && !error) {
+            setFormData({
+              SERV_NUM: serv.SERV_NUM || "",
+              SERV_NOM_CLI: serv.SERV_NOM_CLI || "",
+              SERV_TEL_CLI: serv.SERV_TEL_CLI || "",
+              SERV_CIUDAD: serv.SERV_CIUDAD || "",
+              SERV_DIR: serv.SERV_DIR || "",
+              SERV_DESCRIPCION: serv.SERV_DESCRIPCION || "",
+              SERV_OBS: serv.SERV_OBS || "",
+              SERV_REQUIERE_FACT: serv.SERV_REQUIERE_FACT,
+              SERV_CED_REC: serv.SERV_CED_REC || "",
+              SERV_NOM_REC: serv.SERV_NOM_REC || "",
+              SERV_IMG_ENV: serv.SERV_IMG_ENV || null,
+              SERV_CED_ENV: serv.SERV_CED_ENV || "",
+              SERV_NOM_ENV: serv.SERV_NOM_ENV || "",
+              SERV_EST: serv.SERV_EST || 0
+            });
+            
+            // Si tenía foto, la mostramos
+            if (serv.SERV_IMG_ENV) {
+              setImagePreview(`data:image/jpeg;base64,${serv.SERV_IMG_ENV}`);
+            }
+          }
+        } else {
+          // Si es nuevo, cargamos el usuario web como remitente
+          const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
+          if (sesionLocal) {
+            const webUser = JSON.parse(sesionLocal);
+            const cedulaWeb = webUser.WEB_CED || webUser.cedula; 
+            if (cedulaWeb) {
+              const { data: webAdmin, error } = await supabase
+                .from('usersweb')
+                .select('WEB_CED, WEB_NOMBRES, WEB_APELLIDOS')
+                .eq('WEB_CED', cedulaWeb)
+                .single();
 
-            if (webAdmin && !error) {
-              setFormData(prev => ({
-                ...prev,
-                SERV_CED_ENV: webAdmin.WEB_CED,
-                SERV_NOM_ENV: `${webAdmin.WEB_NOMBRES} ${webAdmin.WEB_APELLIDOS}`.trim()
-              }));
+              if (webAdmin && !error) {
+                setFormData(prev => ({
+                  ...prev,
+                  SERV_CED_ENV: webAdmin.WEB_CED,
+                  SERV_NOM_ENV: `${webAdmin.WEB_NOMBRES} ${webAdmin.WEB_APELLIDOS}`.trim()
+                }));
+              }
             }
           }
         }
       } catch (err) {
-        console.error("Error al cargar datos iniciales:", err);
+        console.error("Error al cargar datos:", err);
       }
     };
 
     cargarDatosIniciales();
-  }, []);
+  }, [isEditMode, editId]);
 
   const handleChange = (field: string, value: any) => {
     if (field === 'SERV_CED_REC') {
@@ -122,14 +160,17 @@ export default function AsignarServicioPage() {
     
     setLoading(true);
     try {
-      const res = await fetch('/api/asignar', {
-        method: 'POST',
+      // 👇 LLAMAMOS A TU API DE EDICIÓN O DE ASIGNACIÓN SEGÚN EL MODO 👇
+      const url = isEditMode ? '/api/editarservicio' : '/api/asignar';
+      const method = isEditMode ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method: method,
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formData)
       });
 
       if (res.ok) {
-        // 👇 LLAMAMOS AL MODAL DE ÉXITO EN LUGAR DEL ALERT 👇
         setSuccessModal(true);
       } else {
         const errData = await res.json();
@@ -167,10 +208,10 @@ export default function AsignarServicioPage() {
               </button>
               <div>
                 <h1 className="text-3xl font-extrabold text-[#001C38] tracking-tight italic uppercase">
-                  Nueva Asignación
+                  {isEditMode ? 'Editar Asignación' : 'Nueva Asignación'}
                 </h1>
                 <p className="text-sm font-medium text-gray-500">
-                  Crea un nuevo servicio • Asigna: <span className="font-bold text-[#001C38]">{formData.SERV_NOM_ENV}</span>
+                  {isEditMode ? 'Modifica los detalles del servicio' : 'Crea un nuevo servicio'} • {isEditMode ? 'Creado por' : 'Asigna'}: <span className="font-bold text-[#001C38]">{formData.SERV_NOM_ENV}</span>
                 </p>
               </div>
             </div>
@@ -189,7 +230,8 @@ export default function AsignarServicioPage() {
                   type="text"
                   placeholder="Ej: A-10542"
                   maxLength={20}
-                  className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb] transition-all uppercase font-bold text-[#001C38]"
+                  readOnly={isEditMode} // Si editas, no puedes cambiar el ID
+                  className={`w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none transition-all uppercase font-bold text-[#001C38] ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-[#f8fafc] focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb]'}`}
                   value={formData.SERV_NUM}
                   onChange={(e) => handleChange('SERV_NUM', e.target.value)}
                 />
@@ -367,7 +409,7 @@ export default function AsignarServicioPage() {
                      <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
-                      <CheckCircle2 size={20} /> Guardar Servicio
+                      <CheckCircle2 size={20} /> {isEditMode ? 'Actualizar Cambios' : 'Guardar Servicio'}
                     </>
                   )}
                 </button>
@@ -378,7 +420,7 @@ export default function AsignarServicioPage() {
         </div>
       </main>
 
-      {/* Modal de Éxito (NUEVO) */}
+      {/* Modales */}
       {successModal && (
         <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200 border-2 border-green-100">
@@ -388,7 +430,7 @@ export default function AsignarServicioPage() {
             <div>
               <h3 className="text-2xl font-black text-[#001C38] uppercase tracking-tight">¡Éxito!</h3>
               <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed">
-                El servicio ha sido creado y guardado correctamente.
+                El servicio ha sido {isEditMode ? 'actualizado' : 'creado y asignado'} correctamente.
               </p>
             </div>
             <button 
@@ -401,7 +443,6 @@ export default function AsignarServicioPage() {
         </div>
       )}
 
-      {/* Modal de Errores de Validación */}
       {errorModal.show && (
         <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200 border-2 border-red-100">
@@ -424,7 +465,6 @@ export default function AsignarServicioPage() {
         </div>
       )}
 
-      {/* Modal de Confirmación de Cancelación */}
       {showCancelModal && (
         <div className="fixed inset-0 z-[110] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200">
@@ -434,7 +474,7 @@ export default function AsignarServicioPage() {
             <div>
               <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">¿Descartar cambios?</h3>
               <p className="text-gray-500 text-sm font-medium mt-2">
-                Se perderá toda la información que has ingresado.
+                Se perderá toda la información que has {isEditMode ? 'modificado' : 'ingresado'}.
               </p>
             </div>
             <div className="flex flex-col w-full gap-3">
@@ -455,5 +495,14 @@ export default function AsignarServicioPage() {
         </div>
       )}
     </div>
+  );
+}
+
+// Next.js requiere Suspense para usarSearchParams
+export default function AsignarServicioWrapper() {
+  return (
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-[#001C38] font-bold text-xl">Cargando...</div>}>
+      <FormularioDinamico />
+    </Suspense>
   );
 }
