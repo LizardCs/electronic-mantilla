@@ -12,7 +12,7 @@ export const Header = () => {
   const router = useRouter();
   const pathname = usePathname();
   const isAuthPage = pathname === '/login';
-  const isReportPage = pathname.startsWith('/reportes');
+  const isReportPage = pathname.startsWith('/reportes') || pathname.startsWith('/asignar');
 
   useEffect(() => {
     setMounted(true);
