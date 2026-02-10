@@ -1,4 +1,4 @@
-// app/asignar/page.tsx
+// src/app/asignar/page.tsx
 'use client';
 
 import { useState, useEffect, Suspense } from 'react';
@@ -15,7 +15,6 @@ function FormularioDinamico() {
   const router = useRouter();
   const searchParams = useSearchParams();
   
-  // 👇 DETECTAMOS SI ESTAMOS EN MODO EDICIÓN 👇
   const editId = searchParams.get('id');
   const isEditMode = !!editId; 
 
@@ -29,7 +28,9 @@ function FormularioDinamico() {
   const [formData, setFormData] = useState({
     SERV_NUM: "",
     SERV_NOM_CLI: "",
+    SERV_CED_CLI: "",    // <-- NUEVO
     SERV_TEL_CLI: "",
+    SERV_CORREO_CLI: "", // <-- NUEVO
     SERV_CIUDAD: "",
     SERV_DIR: "",
     SERV_DESCRIPCION: "",
@@ -46,16 +47,13 @@ function FormularioDinamico() {
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       try {
-        // 1. CARGAR TÉCNICOS
         const resTec = await fetch('/api/tecnicos');
         if (resTec.ok) {
           const dataTec = await resTec.json();
           setTecnicos(Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []));
         }
 
-        // 2. ¿ES EDICIÓN O ES NUEVO?
         if (isEditMode) {
-          // Si es edición, buscamos los datos del servicio en Supabase
           const { data: serv, error } = await supabase
             .from('serviciostecnicos')
             .select('*')
@@ -66,7 +64,9 @@ function FormularioDinamico() {
             setFormData({
               SERV_NUM: serv.SERV_NUM || "",
               SERV_NOM_CLI: serv.SERV_NOM_CLI || "",
+              SERV_CED_CLI: serv.SERV_CED_CLI || "",       // <-- NUEVO
               SERV_TEL_CLI: serv.SERV_TEL_CLI || "",
+              SERV_CORREO_CLI: serv.SERV_CORREO_CLI || "", // <-- NUEVO
               SERV_CIUDAD: serv.SERV_CIUDAD || "",
               SERV_DIR: serv.SERV_DIR || "",
               SERV_DESCRIPCION: serv.SERV_DESCRIPCION || "",
@@ -80,13 +80,11 @@ function FormularioDinamico() {
               SERV_EST: serv.SERV_EST || 0
             });
             
-            // Si tenía foto, la mostramos
             if (serv.SERV_IMG_ENV) {
               setImagePreview(`data:image/jpeg;base64,${serv.SERV_IMG_ENV}`);
             }
           }
         } else {
-          // Si es nuevo, cargamos el usuario web como remitente
           const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
           if (sesionLocal) {
             const webUser = JSON.parse(sesionLocal);
@@ -160,7 +158,6 @@ function FormularioDinamico() {
     
     setLoading(true);
     try {
-      // 👇 LLAMAMOS A TU API DE EDICIÓN O DE ASIGNACIÓN SEGÚN EL MODO 👇
       const url = isEditMode ? '/api/editarservicio' : '/api/asignar';
       const method = isEditMode ? 'PUT' : 'POST';
 
@@ -198,6 +195,7 @@ function FormularioDinamico() {
       <main className="flex-grow pt-28 pb-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           
+          {/* Cabecera Dinámica */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button 
@@ -219,9 +217,9 @@ function FormularioDinamico() {
 
           <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 p-8 grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
             
-            {/* COLUMNA IZQUIERDA */}
             <div className="space-y-8">
               
+              {/* Número de Servicio */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <Hash size={18} className="text-[#2563eb]" /> N° de Servicio <span className="text-red-500">*</span>
@@ -230,61 +228,66 @@ function FormularioDinamico() {
                   type="text"
                   placeholder="Ej: A-10542"
                   maxLength={20}
-                  readOnly={isEditMode} // Si editas, no puedes cambiar el ID
+                  readOnly={isEditMode}
                   className={`w-full px-5 py-4 border border-gray-200 rounded-2xl outline-none transition-all uppercase font-bold text-[#001C38] ${isEditMode ? 'bg-gray-100 text-gray-500 cursor-not-allowed' : 'bg-[#f8fafc] focus:ring-2 focus:ring-[#2563eb]/20 focus:border-[#2563eb]'}`}
                   value={formData.SERV_NUM}
                   onChange={(e) => handleChange('SERV_NUM', e.target.value)}
                 />
               </div>
 
+              {/* 👇 DATOS DEL CLIENTE (CON CÉDULA Y CORREO) 👇 */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <User size={18} className="text-[#2563eb]" /> Datos del Cliente <span className="text-red-500">*</span>
                 </div>
-                <div className="grid grid-cols-1 gap-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <input
-                    type="text"
-                    placeholder="Nombres y Apellidos completos"
-                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
-                    value={formData.SERV_NOM_CLI}
-                    onChange={(e) => handleChange('SERV_NOM_CLI', e.target.value)}
+                    type="text" placeholder="Nombres y Apellidos completos *"
+                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] md:col-span-2"
+                    value={formData.SERV_NOM_CLI} onChange={(e) => handleChange('SERV_NOM_CLI', e.target.value)}
                   />
                   <input
-                    type="tel"
-                    placeholder="Teléfono (Ej: 0987654321)"
+                    type="text" placeholder="Cédula / RUC (Opcional)" maxLength={13}
                     className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
-                    value={formData.SERV_TEL_CLI}
-                    onChange={(e) => handleChange('SERV_TEL_CLI', e.target.value)}
+                    value={formData.SERV_CED_CLI} onChange={(e) => handleChange('SERV_CED_CLI', e.target.value.replace(/\D/g, ''))}
+                  />
+                  <input
+                    type="tel" placeholder="Teléfono *" maxLength={10}
+                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
+                    value={formData.SERV_TEL_CLI} onChange={(e) => handleChange('SERV_TEL_CLI', e.target.value.replace(/\D/g, ''))}
+                  />
+                  <input
+                    type="email" placeholder="Correo electrónico (Opcional)"
+                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] md:col-span-2"
+                    value={formData.SERV_CORREO_CLI} onChange={(e) => handleChange('SERV_CORREO_CLI', e.target.value)}
                   />
                 </div>
               </div>
 
+              {/* Ubicación */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <MapPin size={18} className="text-[#2563eb]" /> Ubicación <span className="text-red-500">*</span>
                 </div>
                 <div className="grid grid-cols-1 gap-4">
                   <input
-                    type="text"
-                    placeholder="Ciudad"
+                    type="text" placeholder="Ciudad"
                     className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
-                    value={formData.SERV_CIUDAD}
-                    onChange={(e) => handleChange('SERV_CIUDAD', e.target.value)}
+                    value={formData.SERV_CIUDAD} onChange={(e) => handleChange('SERV_CIUDAD', e.target.value)}
                   />
                   <input
-                    type="text"
-                    placeholder="Dirección Exacta"
+                    type="text" placeholder="Dirección Exacta"
                     className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
-                    value={formData.SERV_DIR}
-                    onChange={(e) => handleChange('SERV_DIR', e.target.value)}
+                    value={formData.SERV_DIR} onChange={(e) => handleChange('SERV_DIR', e.target.value)}
                   />
                 </div>
               </div>
 
+              {/* Foto */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
-                    <Camera size={18} className="text-[#2563eb]" /> Foto del Equipo <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
+                    <Camera size={18} className="text-[#2563eb]" /> Imagen del comprobante de servicio <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
                   </div>
                   {imagePreview && (
                     <button type="button" onClick={() => {setImagePreview(null); handleChange('SERV_IMG_ENV', null)}} className="text-red-500 text-xs font-bold hover:underline">
@@ -310,36 +313,34 @@ function FormularioDinamico() {
 
             </div>
 
-            {/* COLUMNA DERECHA */}
             <div className="space-y-8 flex flex-col justify-between">
               
               <div className="space-y-8">
+                {/* Problema */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                     <Wrench size={18} className="text-[#2563eb]" /> Daño / Problema <span className="text-red-500">*</span>
                   </div>
                   <textarea
-                    placeholder="Describa la falla reportada detalladamente..."
-                    rows={4}
+                    placeholder="Describa la falla reportada detalladamente..." rows={4}
                     className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] resize-none"
-                    value={formData.SERV_DESCRIPCION}
-                    onChange={(e) => handleChange('SERV_DESCRIPCION', e.target.value)}
+                    value={formData.SERV_DESCRIPCION} onChange={(e) => handleChange('SERV_DESCRIPCION', e.target.value)}
                   />
                 </div>
 
+                {/* Observaciones */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                     <Eye size={18} className="text-[#2563eb]" /> Observaciones <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
                   </div>
                   <textarea
-                    placeholder="Detalles extra (llamar antes, timbre dañado, etc.)"
-                    rows={2}
+                    placeholder="Detalles extra (llamar antes, timbre dañado, etc.)" rows={2}
                     className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] resize-none"
-                    value={formData.SERV_OBS}
-                    onChange={(e) => handleChange('SERV_OBS', e.target.value)}
+                    value={formData.SERV_OBS} onChange={(e) => handleChange('SERV_OBS', e.target.value)}
                   />
                 </div>
 
+                {/* Factura */}
                 <div className="space-y-3 bg-[#f8fafc] p-5 rounded-2xl border border-gray-100">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm mb-2">
                     <Receipt size={18} className="text-[#2563eb]" /> ¿Requiere Factura? <span className="text-red-500">*</span>
@@ -364,6 +365,7 @@ function FormularioDinamico() {
                   {formData.SERV_REQUIERE_FACT === null && <p className="text-red-500 text-xs mt-2 italic">* Selección obligatoria</p>}
                 </div>
 
+                {/* Técnico */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
@@ -377,7 +379,7 @@ function FormularioDinamico() {
                   </div>
                   <select
                     className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] font-medium appearance-none cursor-pointer"
-                    value={formData.SERV_CED_REC}
+                    value={formData.SERV_CED_REC || ""}
                     onChange={(e) => handleChange('SERV_CED_REC', e.target.value)}
                   >
                     <option value="" disabled className="text-gray-400">-- Seleccione un técnico (Puede ser después) --</option>
@@ -392,25 +394,22 @@ function FormularioDinamico() {
                 </div>
               </div>
 
+              {/* Botones */}
               <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-4 mt-8">
                 <button
-                  type="button"
-                  onClick={handleCancel}
+                  type="button" onClick={handleCancel}
                   className="w-full sm:w-1/3 py-4 bg-gray-100 text-gray-500 font-black rounded-2xl uppercase tracking-widest hover:bg-gray-200 transition-colors"
                 >
                   Cancelar
                 </button>
                 <button
-                  type="submit"
-                  disabled={loading}
+                  type="submit" disabled={loading}
                   className="w-full sm:w-2/3 py-4 bg-[#001C38] text-white font-black rounded-2xl uppercase tracking-widest hover:bg-[#002b5e] transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {loading ? (
                      <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
-                    <>
-                      <CheckCircle2 size={20} /> {isEditMode ? 'Actualizar Cambios' : 'Guardar Servicio'}
-                    </>
+                    <><CheckCircle2 size={20} /> {isEditMode ? 'Actualizar Cambios' : 'Guardar Servicio'}</>
                   )}
                 </button>
               </div>
@@ -420,7 +419,7 @@ function FormularioDinamico() {
         </div>
       </main>
 
-      {/* Modales */}
+      {/* Modales (Éxito, Error, Cancelar) ... */}
       {successModal && (
         <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200 border-2 border-green-100">
@@ -433,11 +432,8 @@ function FormularioDinamico() {
                 El servicio ha sido {isEditMode ? 'actualizado' : 'creado y asignado'} correctamente.
               </p>
             </div>
-            <button 
-              onClick={() => router.push('/reportes')}
-              className="w-full mt-4 py-4 bg-[#34C759] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-green-600 transition-colors shadow-lg shadow-green-200"
-            >
-              Aceptar
+            <button onClick={() => router.push('/reportes')} className="w-full mt-4 py-4 bg-[#34C759] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-green-600 transition-colors shadow-lg shadow-green-200">
+              Continuar a Reportes
             </button>
           </div>
         </div>
@@ -446,19 +442,12 @@ function FormularioDinamico() {
       {errorModal.show && (
         <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200 border-2 border-red-100">
-            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-1">
-              <AlertTriangle size={32} />
-            </div>
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-1"><AlertTriangle size={32} /></div>
             <div>
               <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">Falta Información</h3>
-              <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed">
-                {errorModal.message}
-              </p>
+              <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed">{errorModal.message}</p>
             </div>
-            <button 
-              onClick={() => setErrorModal({ show: false, message: "" })}
-              className="w-full mt-4 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-100 transition-colors"
-            >
+            <button onClick={() => setErrorModal({ show: false, message: "" })} className="w-full mt-4 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-100 transition-colors">
               Entendido
             </button>
           </div>
@@ -468,26 +457,16 @@ function FormularioDinamico() {
       {showCancelModal && (
         <div className="fixed inset-0 z-[110] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200">
-            <div className="w-20 h-20 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mb-2">
-              <AlertCircle size={40} />
-            </div>
+            <div className="w-20 h-20 bg-yellow-50 text-yellow-500 rounded-full flex items-center justify-center mb-2"><AlertCircle size={40} /></div>
             <div>
               <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">¿Descartar cambios?</h3>
-              <p className="text-gray-500 text-sm font-medium mt-2">
-                Se perderá toda la información que has {isEditMode ? 'modificado' : 'ingresado'}.
-              </p>
+              <p className="text-gray-500 text-sm font-medium mt-2">Se perderá toda la información que has modificado.</p>
             </div>
             <div className="flex flex-col w-full gap-3">
-              <button 
-                onClick={() => router.push('/reportes')}
-                className="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-colors shadow-lg shadow-red-200"
-              >
+              <button onClick={() => router.push('/reportes')} className="w-full py-4 bg-red-600 text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-700 transition-colors shadow-lg shadow-red-200">
                 Sí, salir
               </button>
-              <button 
-                onClick={() => setShowCancelModal(false)}
-                className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors"
-              >
+              <button onClick={() => setShowCancelModal(false)} className="w-full py-4 bg-gray-100 text-gray-500 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-gray-200 transition-colors">
                 Continuar Editando
               </button>
             </div>
@@ -498,10 +477,9 @@ function FormularioDinamico() {
   );
 }
 
-// Next.js requiere Suspense para usarSearchParams
 export default function AsignarServicioWrapper() {
   return (
-    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-[#001C38] font-bold text-xl">Cargando...</div>}>
+    <Suspense fallback={<div className="min-h-screen flex items-center justify-center bg-[#f8fafc] text-[#001C38] font-bold text-xl">Cargando formulario...</div>}>
       <FormularioDinamico />
     </Suspense>
   );

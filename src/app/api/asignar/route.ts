@@ -17,6 +17,8 @@ export async function POST(request: Request) {
       SERV_EST,
       SERV_NOM_CLI,
       SERV_TEL_CLI,
+      SERV_CED_CLI,      // <-- AÑADIDO: Cédula
+      SERV_CORREO_CLI,   // <-- AÑADIDO: Correo
       SERV_CIUDAD,
       SERV_DIR,
       SERV_OBS,
@@ -45,6 +47,8 @@ export async function POST(request: Request) {
           "SERV_EST": SERV_EST || 0,
           "SERV_NOM_CLI": String(SERV_NOM_CLI).trim(),
           "SERV_TEL_CLI": String(SERV_TEL_CLI).trim(),
+          "SERV_CED_CLI": SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "",       // <-- AÑADIDO
+          "SERV_CORREO_CLI": SERV_CORREO_CLI ? String(SERV_CORREO_CLI).trim() : "", // <-- AÑADIDO
           "SERV_CIUDAD": String(SERV_CIUDAD).trim(),
           "SERV_DIR": String(SERV_DIR).trim(),
           "SERV_OBS": SERV_OBS || "",
