@@ -4,10 +4,11 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
+import { supabase } from '@/lib/supabase';
 import { 
   ArrowLeft, Camera, Hash, User, MapPin, 
   Wrench, Eye, Receipt, Users, Image as ImageIcon,
-  CheckCircle2, AlertCircle
+  CheckCircle2, AlertCircle, AlertTriangle
 } from 'lucide-react';
 
 export default function AsignarServicioPage() {
@@ -16,6 +17,8 @@ export default function AsignarServicioPage() {
   const [loading, setLoading] = useState(false);
   const [tecnicos, setTecnicos] = useState<any[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
+  const [errorModal, setErrorModal] = useState({ show: false, message: "" });
+  const [successModal, setSuccessModal] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
 
   const [formData, setFormData] = useState({
@@ -31,23 +34,48 @@ export default function AsignarServicioPage() {
     SERV_NOM_REC: "",
     SERV_IMG_ENV: null as string | null,
     SERV_CED_ENV: "AdminWeb", 
-    SERV_NOM_ENV: "Administrador General",
+    SERV_NOM_ENV: "Administrador Web", 
     SERV_EST: 0
   });
 
   useEffect(() => {
-    const fetchTecnicos = async () => {
+    const cargarDatosIniciales = async () => {
       try {
-        const res = await fetch('/api/tecnicos');
-        if (res.ok) {
-          const data = await res.json();
-          setTecnicos(data);
+        const resTec = await fetch('/api/tecnicos');
+        if (resTec.ok) {
+          const dataTec = await resTec.json();
+          const listaTecnicos = Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []);
+          setTecnicos(listaTecnicos);
+        }
+
+        const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
+        
+        if (sesionLocal) {
+          const webUser = JSON.parse(sesionLocal);
+          const cedulaWeb = webUser.WEB_CED || webUser.cedula; 
+
+          if (cedulaWeb) {
+            const { data: webAdmin, error } = await supabase
+              .from('usersweb')
+              .select('WEB_CED, WEB_NOMBRES, WEB_APELLIDOS')
+              .eq('WEB_CED', cedulaWeb)
+              .single();
+
+            if (webAdmin && !error) {
+              setFormData(prev => ({
+                ...prev,
+                SERV_CED_ENV: webAdmin.WEB_CED,
+                SERV_NOM_ENV: `${webAdmin.WEB_NOMBRES} ${webAdmin.WEB_APELLIDOS}`.trim()
+              }));
+            }
+          }
         }
       } catch (err) {
-        console.error("Error al cargar técnicos:", err);
+        console.error("Error al cargar datos iniciales:", err);
       }
     };
-    fetchTecnicos();
+
+    cargarDatosIniciales();
   }, []);
 
   const handleChange = (field: string, value: any) => {
@@ -77,17 +105,21 @@ export default function AsignarServicioPage() {
     }
   };
 
+  const showError = (msg: string) => {
+    setErrorModal({ show: true, message: msg });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (!formData.SERV_NUM.trim()) return alert("El número de servicio es obligatorio.");
-    if (!formData.SERV_NOM_CLI.trim()) return alert("El nombre del cliente es obligatorio.");
-    if (!formData.SERV_TEL_CLI.trim()) return alert("El teléfono del cliente es obligatorio.");
-    if (!formData.SERV_CIUDAD.trim()) return alert("La ciudad es obligatoria.");
-    if (!formData.SERV_DIR.trim()) return alert("La dirección es obligatoria.");
-    if (!formData.SERV_DESCRIPCION.trim()) return alert("Debe describir el daño o problema.");
-    if (formData.SERV_REQUIERE_FACT === null) return alert("Debe indicar si requiere factura o no.");
-
+    if (!formData.SERV_NUM.trim()) return showError("El número de servicio es obligatorio.");
+    if (!formData.SERV_NOM_CLI.trim()) return showError("El nombre del cliente es obligatorio.");
+    if (!formData.SERV_TEL_CLI.trim()) return showError("El teléfono del cliente es obligatorio.");
+    if (!formData.SERV_CIUDAD.trim()) return showError("La ciudad es obligatoria.");
+    if (!formData.SERV_DIR.trim()) return showError("La dirección del cliente es obligatoria.");
+    if (!formData.SERV_DESCRIPCION.trim()) return showError("Debe describir el daño o problema.");
+    if (formData.SERV_REQUIERE_FACT === null) return showError("Debe indicar si requiere factura o no.");
+    
     setLoading(true);
     try {
       const res = await fetch('/api/asignar', {
@@ -97,14 +129,14 @@ export default function AsignarServicioPage() {
       });
 
       if (res.ok) {
-        alert("¡Servicio creado y asignado correctamente!");
-        router.push('/reportes');
+        // 👇 LLAMAMOS AL MODAL DE ÉXITO EN LUGAR DEL ALERT 👇
+        setSuccessModal(true);
       } else {
         const errData = await res.json();
-        alert(`Error al guardar: ${errData.error || 'Desconocido'}`);
+        showError(`Error al guardar: ${errData.error || 'Desconocido'}`);
       }
     } catch (error) {
-      alert("Error de conexión al servidor.");
+      showError("Error de conexión al servidor.");
     } finally {
       setLoading(false);
     }
@@ -125,7 +157,6 @@ export default function AsignarServicioPage() {
       <main className="flex-grow pt-28 pb-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
           
-          {/* Cabecera */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
               <button 
@@ -138,7 +169,9 @@ export default function AsignarServicioPage() {
                 <h1 className="text-3xl font-extrabold text-[#001C38] tracking-tight italic uppercase">
                   Nueva Asignación
                 </h1>
-                <p className="text-sm font-medium text-gray-500">Crea un nuevo servicio técnico</p>
+                <p className="text-sm font-medium text-gray-500">
+                  Crea un nuevo servicio • Asigna: <span className="font-bold text-[#001C38]">{formData.SERV_NOM_ENV}</span>
+                </p>
               </div>
             </div>
           </div>
@@ -148,7 +181,6 @@ export default function AsignarServicioPage() {
             {/* COLUMNA IZQUIERDA */}
             <div className="space-y-8">
               
-              {/* Número de Servicio */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <Hash size={18} className="text-[#2563eb]" /> N° de Servicio <span className="text-red-500">*</span>
@@ -163,7 +195,6 @@ export default function AsignarServicioPage() {
                 />
               </div>
 
-              {/* Datos del Cliente */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <User size={18} className="text-[#2563eb]" /> Datos del Cliente <span className="text-red-500">*</span>
@@ -186,7 +217,6 @@ export default function AsignarServicioPage() {
                 </div>
               </div>
 
-              {/* Ubicación */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <MapPin size={18} className="text-[#2563eb]" /> Ubicación <span className="text-red-500">*</span>
@@ -209,7 +239,6 @@ export default function AsignarServicioPage() {
                 </div>
               </div>
 
-              {/* Foto (Opcional Web) */}
               <div className="space-y-3">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
@@ -243,7 +272,6 @@ export default function AsignarServicioPage() {
             <div className="space-y-8 flex flex-col justify-between">
               
               <div className="space-y-8">
-                {/* Problema */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                     <Wrench size={18} className="text-[#2563eb]" /> Daño / Problema <span className="text-red-500">*</span>
@@ -257,7 +285,6 @@ export default function AsignarServicioPage() {
                   />
                 </div>
 
-                {/* Observaciones */}
                 <div className="space-y-3">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                     <Eye size={18} className="text-[#2563eb]" /> Observaciones <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
@@ -271,7 +298,6 @@ export default function AsignarServicioPage() {
                   />
                 </div>
 
-                {/* Factura */}
                 <div className="space-y-3 bg-[#f8fafc] p-5 rounded-2xl border border-gray-100">
                   <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm mb-2">
                     <Receipt size={18} className="text-[#2563eb]" /> ¿Requiere Factura? <span className="text-red-500">*</span>
@@ -296,7 +322,6 @@ export default function AsignarServicioPage() {
                   {formData.SERV_REQUIERE_FACT === null && <p className="text-red-500 text-xs mt-2 italic">* Selección obligatoria</p>}
                 </div>
 
-                {/* Técnico */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
@@ -319,13 +344,12 @@ export default function AsignarServicioPage() {
                         <option key={t.MOV_CED} value={t.MOV_CED}>{t.nombre_completo} (CI: {t.MOV_CED})</option>
                       ))
                     ) : (
-                      <option value="" disabled>No hay técnicos disponibles (Verifique la base de datos)</option>
+                      <option value="" disabled>Cargando técnicos...</option>
                     )}
                   </select>
                 </div>
               </div>
 
-              {/* Botones de acción */}
               <div className="pt-6 border-t border-gray-100 flex flex-col sm:flex-row gap-4 mt-8">
                 <button
                   type="button"
@@ -353,6 +377,52 @@ export default function AsignarServicioPage() {
           </form>
         </div>
       </main>
+
+      {/* Modal de Éxito (NUEVO) */}
+      {successModal && (
+        <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200 border-2 border-green-100">
+            <div className="w-20 h-20 bg-green-50 text-green-500 rounded-full flex items-center justify-center mb-2">
+              <CheckCircle2 size={48} className="animate-bounce" />
+            </div>
+            <div>
+              <h3 className="text-2xl font-black text-[#001C38] uppercase tracking-tight">¡Éxito!</h3>
+              <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed">
+                El servicio ha sido creado y guardado correctamente.
+              </p>
+            </div>
+            <button 
+              onClick={() => router.push('/reportes')}
+              className="w-full mt-4 py-4 bg-[#34C759] text-white rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-green-600 transition-colors shadow-lg shadow-green-200"
+            >
+              Aceptar
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Errores de Validación */}
+      {errorModal.show && (
+        <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
+          <div className="bg-white w-full max-w-sm rounded-[3rem] p-8 shadow-2xl text-center flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200 border-2 border-red-100">
+            <div className="w-16 h-16 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-1">
+              <AlertTriangle size={32} />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">Falta Información</h3>
+              <p className="text-gray-500 text-sm font-medium mt-2 leading-relaxed">
+                {errorModal.message}
+              </p>
+            </div>
+            <button 
+              onClick={() => setErrorModal({ show: false, message: "" })}
+              className="w-full mt-4 py-4 bg-red-50 text-red-600 border border-red-100 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-red-100 transition-colors"
+            >
+              Entendido
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Modal de Confirmación de Cancelación */}
       {showCancelModal && (
