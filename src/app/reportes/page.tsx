@@ -7,7 +7,8 @@ import { Header } from '@/components/layout/Header';
 import { 
   Search, FileText, RefreshCw, ClipboardList, 
   Clock, CheckCircle2, X, Trash2, PlusCircle, 
-  LayoutList, Download, Edit
+  LayoutList, Download, Edit, FileEdit,
+  MapPin, Phone, Receipt
 } from 'lucide-react';
 
 export default function ReportesPage() {
@@ -107,6 +108,9 @@ export default function ReportesPage() {
       fecha_inicio: s.SERV_FECH_ASIG,
       tecnico_nombre: s.SERV_NOM_REC,
       cliente_nombre: s.SERV_NOM_CLI, 
+      cliente_telefono: s.SERV_TEL_CLI,
+      cliente_direccion: s.SERV_DIR,
+      requiere_factura: s.SERV_REQUIERE_FACT,
       descripcion_tecnico: rep?.REP_TIPO,
       fecha_fin: rep?.REP_FECHA,
       documento_pdf: rep?.REP_DOC
@@ -121,7 +125,8 @@ export default function ReportesPage() {
     const cumpleTexto = 
       s.tecnico_nombre?.toLowerCase().includes(filtro.toLowerCase()) ||
       s.numero_servicio?.toString().includes(filtro) ||
-      s.descripcion_trabajo?.toLowerCase().includes(filtro.toLowerCase());
+      s.descripcion_trabajo?.toLowerCase().includes(filtro.toLowerCase()) ||
+      s.cliente_nombre?.toLowerCase().includes(filtro.toLowerCase());
 
     const cumpleEstado = 
       estadoFiltro === 'todos' || 
@@ -135,7 +140,7 @@ export default function ReportesPage() {
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
       <Header />
       <main className="flex-grow pt-28 pb-10 px-4 sm:px-6 lg:px-8">
-        <div className="max-w-6xl mx-auto">
+        <div className="max-w-7xl mx-auto">
           
           <div className="flex flex-wrap gap-4 mb-8">
             <button 
@@ -200,7 +205,7 @@ export default function ReportesPage() {
             <Search className="absolute left-6 top-1/2 -translate-y-1/2 text-gray-300" size={22} />
             <input 
               type="text" 
-              placeholder={`Buscar por técnico, número o descripción...`} 
+              placeholder={`Buscar por cliente, técnico, número o descripción...`} 
               className="w-full pl-16 pr-6 py-5 bg-white border border-gray-100 rounded-[1.5rem] shadow-sm outline-none font-medium text-[#001C38] focus:ring-2 focus:ring-blue-500/10"
               value={filtro}
               onChange={(e) => setFiltro(e.target.value)}
@@ -212,85 +217,126 @@ export default function ReportesPage() {
               <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-black uppercase tracking-widest text-xs italic">Actualizando...</div>
             ) : filtrados.length > 0 ? (
               filtrados.map((s) => (
-                <div key={s.id} className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-transparent hover:border-[#2563eb]/20 transition-all flex flex-col md:flex-row justify-between items-start md:items-center">
+                <div key={s.id} className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-blue-900/5 border border-transparent hover:border-[#2563eb]/20 transition-all flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
                   
-                  <div className="flex-grow space-y-4 w-full">
+                  <div className="flex-grow space-y-5 w-full xl:pr-8">
+                    
                     <div className="flex items-center gap-4">
                       <div className="bg-[#001C38] text-white px-4 py-1 rounded-xl text-[10px] font-black tracking-[0.2em] uppercase">SERVICIO</div>
                       <span className="text-4xl font-black text-[#001C38]">#{s.numero_servicio}</span>
+                      <div className={`flex items-center gap-2 px-3 py-1 rounded-lg ml-auto xl:ml-4 border ${
+                          parseInt(s.estado) === 1 ? 'bg-green-50 border-green-200 text-[#34C759]' : 'bg-blue-50 border-blue-200 text-[#2563eb]'
+                        }`}>
+                          <div className={`w-2 h-2 rounded-full ${parseInt(s.estado) === 1 ? 'bg-[#34C759]' : 'bg-[#2563eb]'}`} />
+                          <span className="font-bold text-[10px] uppercase tracking-wider">{parseInt(s.estado) === 1 ? 'Completado' : 'En Proceso'}</span>
+                      </div>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4 pt-2">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6 pt-2">
+                      
+                      {/* Cliente (Con sus nuevos datos) */}
                       <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Técnico Responsable</span>
-                        <p className="text-sm font-bold text-[#001C38] uppercase">{s.tecnico_nombre || 'Pendiente de asignación'}</p>
-                      </div>
-
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Fecha Ingreso</span>
-                        <p className="text-sm font-bold text-[#001C38]">{new Date(s.fecha_inicio).toLocaleDateString()}</p>
-                      </div>
-
-                      <div className="flex flex-col">
-                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Estado</span>
-                         <div className={`flex items-center gap-2 w-fit mt-1 ${
-                            parseInt(s.estado) === 1 ? 'text-[#34C759]' : 'text-[#2563eb]'
-                          }`}>
-                            <div className={`w-2 h-2 rounded-full ${parseInt(s.estado) === 1 ? 'bg-[#34C759]' : 'bg-[#2563eb]'}`} />
-                            <span className="font-bold text-xs uppercase">{parseInt(s.estado) === 1 ? 'Completado' : 'En Proceso'}</span>
+                        <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest mb-1">Datos del Cliente</span>
+                        <p className="text-sm font-bold text-[#001C38]">{s.cliente_nombre || 'N/A'}</p>
+                        {(s.cliente_telefono || s.cliente_direccion) && (
+                          <div className="mt-2 space-y-1">
+                            {s.cliente_telefono && <p className="text-xs font-medium text-gray-500 flex items-center gap-2"><Phone size={12}/> {s.cliente_telefono}</p>}
+                            {s.cliente_direccion && <p className="text-xs font-medium text-gray-500 flex items-center gap-2"><MapPin size={12}/> {s.cliente_direccion}</p>}
                           </div>
+                        )}
+                        {/* Etiqueta de Factura */}
+                        <div className="mt-3">
+                          {s.requiere_factura ? (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-purple-50 text-purple-700 text-[10px] font-bold uppercase border border-purple-100">
+                              <Receipt size={12} /> Requiere Factura
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-gray-100 text-gray-500 text-[10px] font-bold uppercase border border-gray-200">
+                              Sin Factura
+                            </span>
+                          )}
+                        </div>
                       </div>
 
-                      {/* CLIENTE */}
-                      {s.cliente_nombre && (
-                         <div className="flex flex-col">
-                           <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Cliente</span>
-                           <p className="text-sm font-bold text-[#001C38]">{s.cliente_nombre}</p>
-                         </div>
-                      )}
+                      {/* Técnico y Fecha */}
+                      <div className="flex flex-col gap-6">
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest mb-1">Técnico Asignado</span>
+                          <p className="text-sm font-bold text-[#001C38] uppercase">{s.tecnico_nombre || 'Pendiente de asignación'}</p>
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest mb-1">Fecha de Ingreso</span>
+                          <p className="text-sm font-bold text-[#001C38]">{new Date(s.fecha_inicio).toLocaleDateString()}</p>
+                        </div>
+                      </div>
 
+                      {/* Problema Reportado (Ocupa las 2 columnas) */}
                       <div className="flex flex-col md:col-span-2 mt-2">
                         <span className="text-[10px] font-black uppercase text-[#88BBDC] tracking-widest">Problema Reportado</span>
-                        <p className="text-sm font-bold text-gray-500 italic border-l-4 border-gray-100 pl-4 mt-1">{s.descripcion_trabajo}</p>
+                        <p className="text-sm font-bold text-gray-600 italic border-l-4 border-gray-100 pl-4 mt-2 leading-relaxed">
+                          {s.descripcion_trabajo}
+                        </p>
                       </div>
+
                     </div>
                   </div>
 
-                  <div className="mt-8 md:mt-0 md:ml-10 flex flex-col gap-3 w-full md:w-auto">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full xl:w-auto xl:min-w-[360px] flex-shrink-0 pt-6 xl:pt-0 border-t xl:border-t-0 xl:border-l border-gray-100 xl:pl-8 mt-6 xl:mt-0">
                     
-                    {/* 👇 NUEVO BOTÓN DE EDITAR (Solo visible si el estado es En Proceso (0)) 👇 */}
-                    {parseInt(s.estado) === 0 && (
-                      <button 
-                        onClick={() => router.push(`/asignar?id=${s.numero_servicio}`)}
-                        className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] transition-all bg-white text-blue-600 border border-blue-200 hover:bg-blue-50 hover:border-blue-400 shadow-sm"
-                      >
-                        <Edit size={20} /> EDITAR
-                      </button>
-                    )}
+                    {/* Botón 1: EDITAR SERVICIO */}
+                    <button 
+                      disabled={parseInt(s.estado) !== 0}
+                      onClick={() => router.push(`/asignar?id=${s.numero_servicio}`)}
+                      className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-black text-[10px] transition-all border shadow-sm ${
+                        parseInt(s.estado) === 0 
+                          ? 'bg-white text-blue-600 border-blue-200 hover:bg-blue-50 hover:border-blue-400 cursor-pointer' 
+                          : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <Edit size={16} /> EDITAR SERVICIO
+                    </button>
 
+                    {/* Botón 2: ELIMINAR */}
+                    <button 
+                      onClick={() => openDeleteConfirm(s.id, s.numero_servicio)}
+                      className="flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-black text-[10px] transition-all bg-white text-red-600 border border-red-200 hover:bg-red-50 hover:border-red-400 shadow-sm"
+                    >
+                      <Trash2 size={16} /> ELIMINAR
+                    </button>
+
+                    {/* Botón 3: EDITAR REPORTE */}
+                    <button 
+                      disabled={parseInt(s.estado) !== 1}
+                      onClick={() => router.push(`/editar-reporte?id=${s.numero_servicio}`)}
+                      className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-black text-[10px] transition-all border shadow-sm ${
+                        parseInt(s.estado) === 1
+                          ? 'bg-white text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:border-indigo-400 cursor-pointer'
+                          : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
+                      }`}
+                    >
+                      <FileEdit size={16} /> EDITAR REPORTE
+                    </button>
+
+                    {/* Botón 4: VER PDF */}
                     <button 
                       disabled={!s.documento_pdf}
                       onClick={() => { setPdfUrl(s.documento_pdf); setModalOpen(true); }}
-                      className={`flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] transition-all shadow-lg border ${
+                      className={`flex items-center justify-center gap-2 px-4 py-4 rounded-xl font-black text-[10px] transition-all shadow-sm border ${
                         s.documento_pdf 
-                        ? 'bg-yellow-100 text-gray-800 border-yellow-200 hover:bg-yellow-400 hover:text-black hover:border-yellow-400' 
-                        : 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                        ? 'bg-yellow-50 text-yellow-700 border-yellow-200 hover:bg-yellow-100 hover:border-yellow-400 cursor-pointer' 
+                        : 'bg-gray-50 text-gray-400 border-gray-200 cursor-not-allowed opacity-60'
                       }`}
                     >
-                      <FileText size={20} /> {s.documento_pdf ? "VER REPORTE PDF" : "SIN REPORTE"}
+                      <FileText size={16} /> {s.documento_pdf ? "VER PDF" : "SIN PDF"}
                     </button>
 
-                    <button 
-                      onClick={() => openDeleteConfirm(s.id, s.numero_servicio)}
-                      className="flex items-center justify-center gap-3 px-8 py-4 rounded-2xl font-black text-[10px] transition-all bg-white text-gray-400 border border-gray-100 hover:bg-red-50 hover:text-red-600 hover:border-red-200 shadow-sm"
-                    >
-                      <Trash2 size={20} /> ELIMINAR
-                    </button>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-bold">No hay servicios que coincidan con la búsqueda.</div>
+              <div className="text-center py-20 bg-white rounded-[2rem] text-gray-400 font-bold border border-dashed border-gray-200">
+                No hay servicios que coincidan con la búsqueda.
+              </div>
             )}
           </div>
         </div>
@@ -330,8 +376,8 @@ export default function ReportesPage() {
                 <div>
                   <h3 className="text-xl font-black text-[#001C38] uppercase tracking-tight">¿Estás seguro?</h3>
                   <p className="text-gray-500 text-sm font-medium mt-2">
-                    Se eliminará el servicio <span className="font-bold text-red-600">#{deleteModal.num}</span>.
-                    Esta acción no se puede deshacer.
+                    Se eliminará el servicio <span className="font-bold text-red-600">#{deleteModal.num}</span> y su REPORTE.
+                    Esta acción NO se puede deshacer, ¿Se encuentra seguro?.
                   </p>
                 </div>
 
