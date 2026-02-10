@@ -18,6 +18,12 @@ export async function POST(request: NextRequest) {
     const response = NextResponse.json({
       message: 'Login exitoso',
       user: {
+        // 👇 ESTOS SON LOS DATOS CLAVE QUE NECESITA TU FORMULARIO 👇
+        WEB_CED: userData.WEB_CED,
+        WEB_NOMBRES: userData.WEB_NOMBRES,
+        WEB_APELLIDOS: userData.WEB_APELLIDOS,
+        
+        // Mantenemos los que ya tenías por si los usas en otro lado
         id: userData.WEB_ID,
         nombre_completo: `${userData.WEB_NOMBRES} ${userData.WEB_APELLIDOS}`,
         usuario: userData.WEB_USU,

@@ -28,9 +28,9 @@ function FormularioDinamico() {
   const [formData, setFormData] = useState({
     SERV_NUM: "",
     SERV_NOM_CLI: "",
-    SERV_CED_CLI: "",    // <-- NUEVO
+    SERV_CED_CLI: "",
     SERV_TEL_CLI: "",
-    SERV_CORREO_CLI: "", // <-- NUEVO
+    SERV_CORREO_CLI: "", 
     SERV_CIUDAD: "",
     SERV_DIR: "",
     SERV_DESCRIPCION: "",
@@ -39,21 +39,43 @@ function FormularioDinamico() {
     SERV_CED_REC: "",
     SERV_NOM_REC: "",
     SERV_IMG_ENV: null as string | null,
-    SERV_CED_ENV: "AdminWeb", 
-    SERV_NOM_ENV: "Administrador Web", 
+    SERV_CED_ENV: "", 
+    SERV_NOM_ENV: "", 
     SERV_EST: 0
   });
 
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       try {
+        // 1. CARGAR TÉCNICOS
         const resTec = await fetch('/api/tecnicos');
         if (resTec.ok) {
           const dataTec = await resTec.json();
           setTecnicos(Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []));
         }
 
+        // 2. LEER SESIÓN DEL ADMINISTRADOR (Con formato a prueba de balas)
+        let cedulaAdmin = "";
+        let nombreAdmin = ""; 
+        
+        const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
+        
+        if (sesionLocal) {
+          try {
+            const webUser = JSON.parse(sesionLocal);
+            // Buscamos la cédula y el nombre en cualquier formato posible
+            cedulaAdmin = webUser.WEB_CED || webUser.cedula || webUser.user?.WEB_CED || "";
+            const nom = webUser.WEB_NOMBRES || webUser.nombre || webUser.user?.WEB_NOMBRES || "";
+            const ape = webUser.WEB_APELLIDOS || webUser.apellido || webUser.user?.WEB_APELLIDOS || "";
+            
+            if (nom) nombreAdmin = `${nom} ${ape}`.trim();
+          } catch (parseError) {
+            console.error("Error leyendo la sesión local:", parseError);
+          }
+        }
+
         if (isEditMode) {
+          // === MODO EDITAR ===
           const { data: serv, error } = await supabase
             .from('serviciostecnicos')
             .select('*')
@@ -64,9 +86,9 @@ function FormularioDinamico() {
             setFormData({
               SERV_NUM: serv.SERV_NUM || "",
               SERV_NOM_CLI: serv.SERV_NOM_CLI || "",
-              SERV_CED_CLI: serv.SERV_CED_CLI || "",       // <-- NUEVO
+              SERV_CED_CLI: serv.SERV_CED_CLI || "",
               SERV_TEL_CLI: serv.SERV_TEL_CLI || "",
-              SERV_CORREO_CLI: serv.SERV_CORREO_CLI || "", // <-- NUEVO
+              SERV_CORREO_CLI: serv.SERV_CORREO_CLI || "",
               SERV_CIUDAD: serv.SERV_CIUDAD || "",
               SERV_DIR: serv.SERV_DIR || "",
               SERV_DESCRIPCION: serv.SERV_DESCRIPCION || "",
@@ -75,9 +97,12 @@ function FormularioDinamico() {
               SERV_CED_REC: serv.SERV_CED_REC || "",
               SERV_NOM_REC: serv.SERV_NOM_REC || "",
               SERV_IMG_ENV: serv.SERV_IMG_ENV || null,
-              SERV_CED_ENV: serv.SERV_CED_ENV || "",
-              SERV_NOM_ENV: serv.SERV_NOM_ENV || "",
-              SERV_EST: serv.SERV_EST || 0
+              SERV_EST: serv.SERV_EST || 0,
+              
+              // 🔥 EL CAMBIO ESTÁ AQUÍ 🔥
+              // Forzamos a usar siempre los datos de quien está editando actualmente
+              SERV_CED_ENV: cedulaAdmin,
+              SERV_NOM_ENV: nombreAdmin 
             });
             
             if (serv.SERV_IMG_ENV) {
@@ -85,24 +110,28 @@ function FormularioDinamico() {
             }
           }
         } else {
-          const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
-          if (sesionLocal) {
-            const webUser = JSON.parse(sesionLocal);
-            const cedulaWeb = webUser.WEB_CED || webUser.cedula; 
-            if (cedulaWeb) {
-              const { data: webAdmin, error } = await supabase
-                .from('usersweb')
-                .select('WEB_CED, WEB_NOMBRES, WEB_APELLIDOS')
-                .eq('WEB_CED', cedulaWeb)
-                .single();
+          // === MODO CREAR NUEVO ===
+          // 1. Carga optimista (Aparece al instante)
+          setFormData(prev => ({
+            ...prev,
+            SERV_CED_ENV: cedulaAdmin,
+            SERV_NOM_ENV: nombreAdmin
+          }));
 
-              if (webAdmin && !error) {
-                setFormData(prev => ({
-                  ...prev,
-                  SERV_CED_ENV: webAdmin.WEB_CED,
-                  SERV_NOM_ENV: `${webAdmin.WEB_NOMBRES} ${webAdmin.WEB_APELLIDOS}`.trim()
-                }));
-              }
+          // 2. Consulta a Supabase para verificar que los datos son frescos
+          if (cedulaAdmin) {
+            const { data: webAdmin, error } = await supabase
+              .from('usersweb')
+              .select('WEB_CED, WEB_NOMBRES, WEB_APELLIDOS')
+              .eq('WEB_CED', cedulaAdmin)
+              .single();
+
+            if (webAdmin && !error) {
+              setFormData(prev => ({
+                ...prev,
+                SERV_CED_ENV: webAdmin.WEB_CED,
+                SERV_NOM_ENV: `${webAdmin.WEB_NOMBRES} ${webAdmin.WEB_APELLIDOS || ''}`.trim()
+              }));
             }
           }
         }
@@ -209,7 +238,7 @@ function FormularioDinamico() {
                   {isEditMode ? 'Editar Asignación' : 'Nueva Asignación'}
                 </h1>
                 <p className="text-sm font-medium text-gray-500">
-                  {isEditMode ? 'Modifica los detalles del servicio' : 'Crea un nuevo servicio'} • {isEditMode ? 'Creado por' : 'Asigna'}: <span className="font-bold text-[#001C38]">{formData.SERV_NOM_ENV}</span>
+                  {isEditMode ? 'Modifica los detalles del servicio' : 'Crea un nuevo servicio'} • {isEditMode ? 'Editado por' : 'Asigna'}: <span className="font-bold text-[#001C38]">{formData.SERV_NOM_ENV || 'Cargando...'}</span>
                 </p>
               </div>
             </div>
