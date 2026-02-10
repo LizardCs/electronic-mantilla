@@ -2,11 +2,12 @@
 
 import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { Lock, User, Wrench, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
+import { Lock, User, Wrench, AlertCircle, CheckCircle2, ArrowRight, Eye, EyeOff } from 'lucide-react';
 
 function LoginForm() {
   const [user, setUser] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [successMsg, setSuccessMsg] = useState('');
@@ -80,6 +81,7 @@ function LoginForm() {
         )}
         
         <form className="space-y-5" onSubmit={handleSubmit}>
+          {/* Campo Usuario */}
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#1e40af] transition-colors">
               <User size={20} />
@@ -95,19 +97,28 @@ function LoginForm() {
             />
           </div>
 
+          {/* Campo Contraseña con botón de visibilidad */}
           <div className="relative group">
             <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-[#1e40af] transition-colors">
               <Lock size={20} />
             </div>
             <input
-              type="password"
+              type={showPassword ? "text" : "password"}
               required
               autoComplete="current-password"
-              className="block w-full pl-12 pr-4 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm focus:ring-2 focus:ring-[#fde68a] focus:border-[#1e40af] focus:bg-white outline-none transition-all"
+              className="block w-full pl-12 pr-12 py-4 bg-slate-50 border border-slate-200 rounded-2xl text-slate-900 text-sm focus:ring-2 focus:ring-[#fde68a] focus:border-[#1e40af] focus:bg-white outline-none transition-all"
               placeholder="Contraseña"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
             />
+            {/* Botón para alternar visibilidad */}
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute inset-y-0 right-0 pr-4 flex items-center text-slate-400 hover:text-[#1e40af] transition-colors focus:outline-none"
+            >
+              {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+            </button>
           </div>
 
           <button
