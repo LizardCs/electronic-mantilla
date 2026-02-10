@@ -105,7 +105,7 @@ export const Header = () => {
                   }`}
                 >
                   <FileText size={16} />
-                  Reportes
+                  Reportes y servicios
                 </Link>
 
                 {/* Botón Logout */}
