@@ -11,8 +11,8 @@ export async function PUT(request: Request) {
       SERV_CED_REC, SERV_NOM_REC,
       SERV_NOM_CLI, SERV_TEL_CLI, SERV_CIUDAD,
       SERV_DIR, SERV_OBS, SERV_REQUIERE_FACT,
-      SERV_CED_CLI,       // <-- AÑADIDO: Cédula
-      SERV_CORREO_CLI     // <-- AÑADIDO: Correo
+      SERV_CED_CLI,      
+      SERV_CORREO_CLI
     } = body;
 
     if (!SERV_NUM) {
@@ -28,14 +28,14 @@ export async function PUT(request: Request) {
         "SERV_NOM_REC": SERV_NOM_REC || null,
         "SERV_NOM_CLI": String(SERV_NOM_CLI).trim(),
         "SERV_TEL_CLI": String(SERV_TEL_CLI).trim(),
-        "SERV_CED_CLI": SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "",       // <-- AÑADIDO
-        "SERV_CORREO_CLI": SERV_CORREO_CLI ? String(SERV_CORREO_CLI).trim() : "", // <-- AÑADIDO
+        "SERV_CED_CLI": SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "",       
+        "SERV_CORREO_CLI": SERV_CORREO_CLI ? String(SERV_CORREO_CLI).trim() : "",
         "SERV_CIUDAD": String(SERV_CIUDAD).trim(),
         "SERV_DIR": String(SERV_DIR).trim(),
         "SERV_OBS": SERV_OBS || "",
         "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT
       })
-      .eq('SERV_NUM', SERV_NUM) // IMPORTANTE: Actualiza donde el ID coincida
+      .eq('SERV_NUM', SERV_NUM) 
       .select();
 
     if (error) {

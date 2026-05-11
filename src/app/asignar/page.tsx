@@ -47,14 +47,12 @@ function FormularioDinamico() {
   useEffect(() => {
     const cargarDatosIniciales = async () => {
       try {
-        // 1. CARGAR TÉCNICOS
         const resTec = await fetch('/api/tecnicos');
         if (resTec.ok) {
           const dataTec = await resTec.json();
           setTecnicos(Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []));
         }
 
-        // 2. LEER SESIÓN DEL ADMINISTRADOR (Con formato a prueba de balas)
         let cedulaAdmin = "";
         let nombreAdmin = ""; 
         
@@ -63,7 +61,6 @@ function FormularioDinamico() {
         if (sesionLocal) {
           try {
             const webUser = JSON.parse(sesionLocal);
-            // Buscamos la cédula y el nombre en cualquier formato posible
             cedulaAdmin = webUser.WEB_CED || webUser.cedula || webUser.user?.WEB_CED || "";
             const nom = webUser.WEB_NOMBRES || webUser.nombre || webUser.user?.WEB_NOMBRES || "";
             const ape = webUser.WEB_APELLIDOS || webUser.apellido || webUser.user?.WEB_APELLIDOS || "";
@@ -75,7 +72,6 @@ function FormularioDinamico() {
         }
 
         if (isEditMode) {
-          // === MODO EDITAR ===
           const { data: serv, error } = await supabase
             .from('serviciostecnicos')
             .select('*')
@@ -99,8 +95,6 @@ function FormularioDinamico() {
               SERV_IMG_ENV: serv.SERV_IMG_ENV || null,
               SERV_EST: serv.SERV_EST || 0,
               
-              // 🔥 EL CAMBIO ESTÁ AQUÍ 🔥
-              // Forzamos a usar siempre los datos de quien está editando actualmente
               SERV_CED_ENV: cedulaAdmin,
               SERV_NOM_ENV: nombreAdmin 
             });
@@ -110,15 +104,12 @@ function FormularioDinamico() {
             }
           }
         } else {
-          // === MODO CREAR NUEVO ===
-          // 1. Carga optimista (Aparece al instante)
           setFormData(prev => ({
             ...prev,
             SERV_CED_ENV: cedulaAdmin,
             SERV_NOM_ENV: nombreAdmin
           }));
 
-          // 2. Consulta a Supabase para verificar que los datos son frescos
           if (cedulaAdmin) {
             const { data: webAdmin, error } = await supabase
               .from('usersweb')

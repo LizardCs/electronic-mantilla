@@ -9,7 +9,7 @@ import { ArrowLeft, Hammer, Construction, FileEdit } from 'lucide-react';
 function EditarReporteContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const numServicio = searchParams.get('id'); // Recuperamos el ID de la URL
+  const numServicio = searchParams.get('id');
 
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
