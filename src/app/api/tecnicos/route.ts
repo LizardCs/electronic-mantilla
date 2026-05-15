@@ -5,7 +5,7 @@ import { supabase } from '@/lib/supabase';
 export async function GET() {
   try {
     const { data: dataMovil, error: errorMovil } = await supabase
-      .from('usersmovil')
+      .from('USERSMOVIL')
       .select('MOV_ID, MOV_CED, NOM_MOV, MOV_APE, MOV_USU, MOV_ROL');
 
     if (errorMovil) {
@@ -21,12 +21,14 @@ export async function GET() {
     }
 
     const usuariosMovil = dataMovil.map(u => ({
+      MOV_ID: u.MOV_ID, 
       MOV_CED: u.MOV_CED,
       NOM_MOV: u.NOM_MOV,
       MOV_APE: u.MOV_APE,
       nombre_completo: `${u.NOM_MOV} ${u.MOV_APE}`.trim(),
       rol: u.MOV_ROL
     }));
+    
     const tecnicos = usuariosMovil.filter(u => u.rol === 0);
 
     if (tecnicos.length > 0) {

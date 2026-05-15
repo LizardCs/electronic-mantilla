@@ -11,7 +11,6 @@ const dbConfig = {
 export async function connectDB() {
   try {
     const connection = await mysql.createConnection(dbConfig);
-    //console.log('Conectado a MySQL - electronic_mantilla_reports');
     return connection;
   } catch (error) {
     console.error('Error conectando a la base de datos:', error);
