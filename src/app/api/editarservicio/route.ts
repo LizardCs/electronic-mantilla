@@ -25,8 +25,6 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Número de servicio no proporcionado" }, { status: 400 });
     }
 
-    // --- 1. BUSCAR O ACTUALIZAR AL CLIENTE ---
-    // Lo buscamos por teléfono (que es lo más seguro en tu flujo)
     let cliId = null;
     const { data: clienteData, error: errSearch } = await supabase
       .from('CLIENTES')
@@ -36,7 +34,6 @@ export async function PUT(request: Request) {
 
     if (clienteData) {
       cliId = clienteData.CLI_ID;
-      // Aprovechamos para actualizar sus datos por si cambiaron
       await supabase
         .from('CLIENTES')
         .update({
@@ -49,23 +46,18 @@ export async function PUT(request: Request) {
         .eq('CLI_ID', cliId);
     }
 
-    // --- 2. PREPARAR DATOS DE ACTUALIZACIÓN DEL SERVICIO ---
-    // Usamos los nombres de columnas EXACTOS de tu base de datos
     const updateData: any = {
       "SERV_DESCRIPCION": SERV_DESCRIPCION,
       "SERV_IMG_ENV": SERV_IMG_ENV || null,
       "SERV_OBS": SERV_OBS || "",
       "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT || false,
-      "SERV_CLI_ID": cliId // <-- Aquí está el truco: usamos el ID numérico
+      "SERV_CLI_ID": cliId
     };
 
-    // Manejo del técnico opcional: 
-    // Si viene un ID lo ponemos, si no, lo dejamos como estaba o null
     if (SERV_TEC_ASIG_ID !== undefined) {
       updateData["SERV_TEC_ASIG_ID"] = SERV_TEC_ASIG_ID === "" ? null : SERV_TEC_ASIG_ID;
     }
 
-    // --- 3. ACTUALIZAR TABLA PRINCIPAL ---
     const { data, error } = await supabase
       .from('SERVICIOSTECNICOS')
       .update(updateData)

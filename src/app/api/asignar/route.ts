@@ -13,25 +13,20 @@ export async function POST(request: Request) {
       SERV_EST,
       SERV_OBS,
       SERV_REQUIERE_FACT,
-      // Datos del cliente a procesar
       SERV_NOM_CLI,
       SERV_TEL_CLI,
       SERV_CED_CLI,
       SERV_CORREO_CLI,
       SERV_CIUDAD,
       SERV_DIR,
-      // IDs de los usuarios (Vienen del frontend)
-      SERV_WEB_ID, // ID del Admin logueado
-      SERV_TEC_ASIG_ID  // ID del Técnico (opcional)
+      SERV_WEB_ID,
+      SERV_TEC_ASIG_ID
     } = body;
 
-    // 1. Validaciones de campos obligatorios
     if (!SERV_NUM || !SERV_NOM_CLI || !SERV_TEL_CLI || !SERV_DESCRIPCION) {
       return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
 
-    // 2. Lógica del Cliente (Buscar o Crear)
-    // Buscamos por teléfono para evitar duplicados
     let cliId = null;
     const { data: clienteExistente } = await supabase
       .from('CLIENTES')
@@ -42,7 +37,6 @@ export async function POST(request: Request) {
     if (clienteExistente) {
       cliId = clienteExistente.CLI_ID;
     } else {
-      // Si no existe, lo creamos
       const { data: nuevoCliente, error: errCliente } = await supabase
         .from('CLIENTES')
         .insert([{
@@ -60,8 +54,6 @@ export async function POST(request: Request) {
       cliId = nuevoCliente.CLI_ID;
     }
 
-    // 3. Inserción del Servicio Técnico
-    // Aquí es donde el técnico (SERV_TEC_ASIG_ID) es opcional (puede ser null)
     const { data, error } = await supabase
       .from('SERVICIOSTECNICOS')
       .insert([
@@ -70,8 +62,8 @@ export async function POST(request: Request) {
           "SERV_DESCRIPCION": SERV_DESCRIPCION,
           "SERV_FECH_ASIG": new Date().toISOString(),
           "SERV_WEB_ID": SERV_WEB_ID || null,
-          "SERV_TEC_ASIG_ID": SERV_TEC_ASIG_ID || null, // <-- Si no se asignó, guarda NULL
-          "SERV_CLI_ID": cliId,               // <-- ID numérico del cliente
+          "SERV_TEC_ASIG_ID": SERV_TEC_ASIG_ID || null, 
+          "SERV_CLI_ID": cliId,               
           "SERV_IMG_ENV": SERV_IMG_ENV || null,
           "SERV_EST": SERV_EST || 0,
           "SERV_OBS": SERV_OBS || "",

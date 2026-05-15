@@ -25,7 +25,6 @@ export async function GET() {
           : `data:application/pdf;base64,${r.REP_DOC}`;
       }
 
-      // Mapeamos los repuestos para que el frontend reciba un arreglo de textos simple
       const repuestosUsados = r.REPORTE_REPUESTOS 
         ? r.REPORTE_REPUESTOS.map((rr: any) => rr.REPUESTOS?.REP_NOMBRE).filter(Boolean)
         : [];

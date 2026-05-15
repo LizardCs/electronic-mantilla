@@ -171,7 +171,6 @@ function FormularioDinamico() {
           SERV_DIR: data.CLI_DIRECCION || ""
         }));
       } else {
-        // Si responde 404 (no existe), limpiamos los campos para que registre al nuevo cliente
         setFormData(prev => ({
           ...prev,
           SERV_NOM_CLI: "",
