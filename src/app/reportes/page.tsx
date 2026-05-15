@@ -100,16 +100,20 @@ export default function ReportesPage() {
 
   const datosMapeados = servicios.map(s => {
     const rep = reportes.find(r => r.REP_SEV_NUM === s.SERV_NUM);
+    const nombreTecnico = s.USERSMOVIL 
+      ? `${s.USERSMOVIL.NOM_MOV} ${s.USERSMOVIL.MOV_APE}`.trim() 
+      : 'Pendiente';
+
     return {
       id: s.SERV_ID,
       numero_servicio: s.SERV_NUM,
       estado: s.SERV_EST,
       descripcion_trabajo: s.SERV_DESCRIPCION,
       fecha_inicio: s.SERV_FECH_ASIG,
-      tecnico_nombre: s.SERV_NOM_REC,
-      cliente_nombre: s.SERV_NOM_CLI, 
-      cliente_telefono: s.SERV_TEL_CLI,
-      cliente_direccion: s.SERV_DIR,
+      tecnico_nombre: nombreTecnico,
+      cliente_nombre: s.CLIENTES?.CLI_NOMBRES || 'N/A', 
+      cliente_telefono: s.CLIENTES?.CLI_TELEFONO || 'N/A',
+      cliente_direccion: s.CLIENTES?.CLI_DIRECCION || 'N/A',
       requiere_factura: s.SERV_REQUIERE_FACT,
       descripcion_tecnico: rep?.REP_TIPO,
       fecha_fin: rep?.REP_FECHA,

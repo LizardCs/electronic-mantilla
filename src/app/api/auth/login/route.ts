@@ -6,7 +6,7 @@ export async function POST(request: NextRequest) {
     const { user, password } = await request.json(); 
     
     const { data: userData, error: supabaseError } = await supabase
-      .from('usersweb')
+      .from('USERSWEB') 
       .select('*')
       .eq('WEB_USU', user)
       .single();
@@ -15,24 +15,35 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Credenciales inválidas' }, { status: 401 });
     }
 
+    const userPayload = {
+      WEB_CED: userData.WEB_CED,
+      WEB_NOMBRES: userData.WEB_NOMBRES,
+      WEB_APELLIDOS: userData.WEB_APELLIDOS,
+      id: userData.WEB_ID,
+      nombre_completo: `${userData.WEB_NOMBRES} ${userData.WEB_APELLIDOS}`,
+      usuario: userData.WEB_USU,
+    };
+
     const response = NextResponse.json({
       message: 'Login exitoso',
-      user: {
-        WEB_CED: userData.WEB_CED,
-        WEB_NOMBRES: userData.WEB_NOMBRES,
-        WEB_APELLIDOS: userData.WEB_APELLIDOS,
-        id: userData.WEB_ID,
-        nombre_completo: `${userData.WEB_NOMBRES} ${userData.WEB_APELLIDOS}`,
-        usuario: userData.WEB_USU,
-      }
+      user: userPayload
     });
 
-    response.cookies.set('isAuthenticated', 'true', {
-      httpOnly: true,
+    const cookieOptions = {
       secure: process.env.NODE_ENV === 'production',
-      sameSite: 'lax',
+      sameSite: 'lax' as const,
       path: '/',
       maxAge: 60 * 60 * 24,
+    };
+
+    response.cookies.set('isAuthenticated', 'true', {
+      ...cookieOptions,
+      httpOnly: true,
+    });
+
+    response.cookies.set('userSession', JSON.stringify(userPayload), {
+      ...cookieOptions,
+      httpOnly: false,
     });
 
     return response;

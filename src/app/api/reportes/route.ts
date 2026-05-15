@@ -4,8 +4,14 @@ import { supabase } from '@/lib/supabase';
 export async function GET() {
   try {
     const { data: reportes, error } = await supabase
-      .from('reportes')
-      .select('*')
+      .from('REPORTES')
+      .select(`
+        *,
+        USERSMOVIL (NOM_MOV, MOV_APE),
+        REPORTE_REPUESTOS (
+          REPUESTOS (REP_NOMBRE)
+        )
+      `)
       .order('REP_FECHA', { ascending: false });
 
     if (error) throw error;
@@ -19,9 +25,15 @@ export async function GET() {
           : `data:application/pdf;base64,${r.REP_DOC}`;
       }
 
+      // Mapeamos los repuestos para que el frontend reciba un arreglo de textos simple
+      const repuestosUsados = r.REPORTE_REPUESTOS 
+        ? r.REPORTE_REPUESTOS.map((rr: any) => rr.REPUESTOS?.REP_NOMBRE).filter(Boolean)
+        : [];
+
       return {
         ...r,
-        REP_DOC: pdfFinal
+        REP_DOC: pdfFinal,
+        repuestos_lista: repuestosUsados
       };
     });
 
