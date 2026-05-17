@@ -9,72 +9,82 @@ export async function POST(request: Request) {
     const {
       SERV_NUM,
       SERV_DESCRIPCION,
-      SERV_CED_ENV,
-      SERV_NOM_ENV,
       SERV_IMG_ENV,
-      SERV_CED_REC,
-      SERV_NOM_REC,
       SERV_EST,
+      SERV_OBS,
+      SERV_REQUIERE_FACT,
       SERV_NOM_CLI,
       SERV_TEL_CLI,
-      SERV_CED_CLI,     
+      SERV_CED_CLI,
       SERV_CORREO_CLI,
       SERV_CIUDAD,
       SERV_DIR,
-      SERV_OBS,
-      SERV_REQUIERE_FACT
+      SERV_WEB_ID,
+      SERV_TEC_ASIG_ID
     } = body;
 
-    if (!SERV_NUM || !SERV_NOM_CLI || !SERV_DESCRIPCION || SERV_REQUIERE_FACT === null) {
-      return NextResponse.json(
-        { error: "Faltan campos obligatorios" },
-        { status: 400 }
-      );
+    if (!SERV_NUM || !SERV_NOM_CLI || !SERV_TEL_CLI || !SERV_DESCRIPCION) {
+      return NextResponse.json({ error: "Faltan campos obligatorios" }, { status: 400 });
     }
-    
+
+    let cliId = null;
+    const { data: clienteExistente } = await supabase
+      .from('CLIENTES')
+      .select('CLI_ID')
+      .eq('CLI_TELEFONO', String(SERV_TEL_CLI).trim())
+      .maybeSingle();
+
+    if (clienteExistente) {
+      cliId = clienteExistente.CLI_ID;
+    } else {
+      const { data: nuevoCliente, error: errCliente } = await supabase
+        .from('CLIENTES')
+        .insert([{
+          "CLI_CEDULA": SERV_CED_CLI || null,
+          "CLI_NOMBRES": String(SERV_NOM_CLI).trim(),
+          "CLI_TELEFONO": String(SERV_TEL_CLI).trim(),
+          "CLI_CORREO": SERV_CORREO_CLI || "",
+          "CLI_DIRECCION": SERV_DIR || "",
+          "CLI_CIUDAD": SERV_CIUDAD || ""
+        }])
+        .select('CLI_ID')
+        .single();
+
+      if (errCliente) throw new Error("Error al registrar cliente: " + errCliente.message);
+      cliId = nuevoCliente.CLI_ID;
+    }
+
     const { data, error } = await supabase
-      .from('serviciostecnicos')
+      .from('SERVICIOSTECNICOS')
       .insert([
         {
           "SERV_NUM": String(SERV_NUM).trim(),
           "SERV_DESCRIPCION": SERV_DESCRIPCION,
           "SERV_FECH_ASIG": new Date().toISOString(),
-          "SERV_CED_ENV": String(SERV_CED_ENV).trim(),
-          "SERV_NOM_ENV": SERV_NOM_ENV,
+          "SERV_WEB_ID": SERV_WEB_ID || null,
+          "SERV_TEC_ASIG_ID": SERV_TEC_ASIG_ID || null, 
+          "SERV_CLI_ID": cliId,               
           "SERV_IMG_ENV": SERV_IMG_ENV || null,
-          "SERV_CED_REC": SERV_CED_REC ? String(SERV_CED_REC).trim() : null,
-          "SERV_NOM_REC": SERV_NOM_REC || null,
           "SERV_EST": SERV_EST || 0,
-          "SERV_NOM_CLI": String(SERV_NOM_CLI).trim(),
-          "SERV_TEL_CLI": String(SERV_TEL_CLI).trim(),
-          "SERV_CED_CLI": SERV_CED_CLI ? String(SERV_CED_CLI).trim() : "",       
-          "SERV_CORREO_CLI": SERV_CORREO_CLI ? String(SERV_CORREO_CLI).trim() : "",
-          "SERV_CIUDAD": String(SERV_CIUDAD).trim(),
-          "SERV_DIR": String(SERV_DIR).trim(),
           "SERV_OBS": SERV_OBS || "",
-          "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT
+          "SERV_REQUIERE_FACT": SERV_REQUIERE_FACT ?? false
         }
       ])
       .select();
 
     if (error) {
-      console.error("Error al asignar servicio:", error.message);
-      return NextResponse.json(
-        { error: error.message },
-        { status: 500 }
-      );
+      console.error("❌ Error al insertar servicio:", error.message);
+      return NextResponse.json({ error: error.message }, { status: 500 });
     }
 
-    return NextResponse.json(
-      { success: true, message: "Servicio asignado correctamente", data: data[0] },
-      { status: 201 }
-    );
+    return NextResponse.json({ 
+      success: true, 
+      message: "Servicio creado y asignado correctamente", 
+      data: data[0] 
+    }, { status: 201 });
 
   } catch (error: any) {
-    console.error("Error en la API asignar:", error.message);
-    return NextResponse.json(
-      { error: "Error interno del servidor" },
-      { status: 500 }
-    );
+    console.error("❌ Error en la API asignar:", error.message);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

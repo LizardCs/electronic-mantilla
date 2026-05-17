@@ -5,20 +5,21 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Header } from '@/components/layout/Header';
 import { supabase } from '@/lib/supabase';
-import { 
-  ArrowLeft, Camera, Hash, User, MapPin, 
+import {
+  ArrowLeft, Camera, Hash, User, MapPin,
   Wrench, Eye, Receipt, Users, Image as ImageIcon,
-  CheckCircle2, AlertCircle, AlertTriangle
+  CheckCircle2, AlertCircle, AlertTriangle, Search
 } from 'lucide-react';
 
 function FormularioDinamico() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  
+
   const editId = searchParams.get('id');
-  const isEditMode = !!editId; 
+  const isEditMode = !!editId;
 
   const [loading, setLoading] = useState(false);
+  const [buscandoCliente, setBuscandoCliente] = useState(false);
   const [tecnicos, setTecnicos] = useState<any[]>([]);
   const [showCancelModal, setShowCancelModal] = useState(false);
   const [errorModal, setErrorModal] = useState({ show: false, message: "" });
@@ -30,17 +31,17 @@ function FormularioDinamico() {
     SERV_NOM_CLI: "",
     SERV_CED_CLI: "",
     SERV_TEL_CLI: "",
-    SERV_CORREO_CLI: "", 
+    SERV_CORREO_CLI: "",
     SERV_CIUDAD: "",
     SERV_DIR: "",
     SERV_DESCRIPCION: "",
     SERV_OBS: "",
     SERV_REQUIERE_FACT: null as boolean | null,
-    SERV_CED_REC: "",
-    SERV_NOM_REC: "",
+    SERV_TEC_ASIG_ID: "" as string | number,
+    SERV_WEB_ID: "" as string | number,
+    SERV_NOM_ENV: "",
+    SERV_CED_ENV: "",
     SERV_IMG_ENV: null as string | null,
-    SERV_CED_ENV: "", 
-    SERV_NOM_ENV: "", 
     SERV_EST: 0
   });
 
@@ -53,18 +54,20 @@ function FormularioDinamico() {
           setTecnicos(Array.isArray(dataTec) ? dataTec : (dataTec.tecnicos || dataTec.data || []));
         }
 
+        let idAdmin = "";
         let cedulaAdmin = "";
-        let nombreAdmin = ""; 
-        
-        const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user'); 
-        
+        let nombreAdmin = "";
+
+        const sesionLocal = localStorage.getItem('usuario_web') || localStorage.getItem('session') || localStorage.getItem('user');
+
         if (sesionLocal) {
           try {
             const webUser = JSON.parse(sesionLocal);
+            idAdmin = webUser.id || webUser.WEB_ID || "";
             cedulaAdmin = webUser.WEB_CED || webUser.cedula || webUser.user?.WEB_CED || "";
             const nom = webUser.WEB_NOMBRES || webUser.nombre || webUser.user?.WEB_NOMBRES || "";
             const ape = webUser.WEB_APELLIDOS || webUser.apellido || webUser.user?.WEB_APELLIDOS || "";
-            
+
             if (nom) nombreAdmin = `${nom} ${ape}`.trim();
           } catch (parseError) {
             console.error("Error leyendo la sesión local:", parseError);
@@ -73,32 +76,41 @@ function FormularioDinamico() {
 
         if (isEditMode) {
           const { data: serv, error } = await supabase
-            .from('serviciostecnicos')
-            .select('*')
+            .from('SERVICIOSTECNICOS')
+            .select(`
+              *,
+              CLIENTES (
+                CLI_CEDULA,
+                CLI_NOMBRES,
+                CLI_TELEFONO,
+                CLI_CORREO,
+                CLI_DIRECCION,
+                CLI_CIUDAD
+              )
+            `)
             .eq('SERV_NUM', editId)
             .single();
 
           if (serv && !error) {
             setFormData({
               SERV_NUM: serv.SERV_NUM || "",
-              SERV_NOM_CLI: serv.SERV_NOM_CLI || "",
-              SERV_CED_CLI: serv.SERV_CED_CLI || "",
-              SERV_TEL_CLI: serv.SERV_TEL_CLI || "",
-              SERV_CORREO_CLI: serv.SERV_CORREO_CLI || "",
-              SERV_CIUDAD: serv.SERV_CIUDAD || "",
-              SERV_DIR: serv.SERV_DIR || "",
+              SERV_NOM_CLI: serv.CLIENTES?.CLI_NOMBRES || "",
+              SERV_CED_CLI: serv.CLIENTES?.CLI_CEDULA || "",
+              SERV_TEL_CLI: serv.CLIENTES?.CLI_TELEFONO || "",
+              SERV_CORREO_CLI: serv.CLIENTES?.CLI_CORREO || "",
+              SERV_CIUDAD: serv.CLIENTES?.CLI_CIUDAD || "",
+              SERV_DIR: serv.CLIENTES?.CLI_DIRECCION || "",
               SERV_DESCRIPCION: serv.SERV_DESCRIPCION || "",
               SERV_OBS: serv.SERV_OBS || "",
               SERV_REQUIERE_FACT: serv.SERV_REQUIERE_FACT,
-              SERV_CED_REC: serv.SERV_CED_REC || "",
-              SERV_NOM_REC: serv.SERV_NOM_REC || "",
+              SERV_TEC_ASIG_ID: serv.SERV_TEC_ASIG_ID || "",
+              SERV_WEB_ID: idAdmin,
+              SERV_NOM_ENV: nombreAdmin,
+              SERV_CED_ENV: cedulaAdmin,
               SERV_IMG_ENV: serv.SERV_IMG_ENV || null,
               SERV_EST: serv.SERV_EST || 0,
-              
-              SERV_CED_ENV: cedulaAdmin,
-              SERV_NOM_ENV: nombreAdmin 
             });
-            
+
             if (serv.SERV_IMG_ENV) {
               setImagePreview(`data:image/jpeg;base64,${serv.SERV_IMG_ENV}`);
             }
@@ -106,25 +118,10 @@ function FormularioDinamico() {
         } else {
           setFormData(prev => ({
             ...prev,
-            SERV_CED_ENV: cedulaAdmin,
-            SERV_NOM_ENV: nombreAdmin
+            SERV_WEB_ID: idAdmin,
+            SERV_NOM_ENV: nombreAdmin,
+            SERV_CED_ENV: cedulaAdmin
           }));
-
-          if (cedulaAdmin) {
-            const { data: webAdmin, error } = await supabase
-              .from('usersweb')
-              .select('WEB_CED, WEB_NOMBRES, WEB_APELLIDOS')
-              .eq('WEB_CED', cedulaAdmin)
-              .single();
-
-            if (webAdmin && !error) {
-              setFormData(prev => ({
-                ...prev,
-                SERV_CED_ENV: webAdmin.WEB_CED,
-                SERV_NOM_ENV: `${webAdmin.WEB_NOMBRES} ${webAdmin.WEB_APELLIDOS || ''}`.trim()
-              }));
-            }
-          }
         }
       } catch (err) {
         console.error("Error al cargar datos:", err);
@@ -135,16 +132,7 @@ function FormularioDinamico() {
   }, [isEditMode, editId]);
 
   const handleChange = (field: string, value: any) => {
-    if (field === 'SERV_CED_REC') {
-      const tec = tecnicos.find(t => t.MOV_CED === value);
-      setFormData(prev => ({ 
-        ...prev, 
-        SERV_CED_REC: value, 
-        SERV_NOM_REC: tec ? tec.nombre_completo : "" 
-      }));
-    } else {
-      setFormData(prev => ({ ...prev, [field]: value }));
-    }
+    setFormData(prev => ({ ...prev, [field]: value }));
   };
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -158,6 +146,44 @@ function FormularioDinamico() {
         setFormData(prev => ({ ...prev, SERV_IMG_ENV: base64String }));
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const buscarClientePorTelefono = async () => {
+    const telefono = formData.SERV_TEL_CLI.trim();
+    if (telefono.length < 9) {
+      alert("Ingrese un número válido para buscar.");
+      return;
+    }
+
+    setBuscandoCliente(true);
+    try {
+      const res = await fetch(`/api/clientes?telefono=${telefono}`);
+      
+      if (res.ok) {
+        const data = await res.json();
+        setFormData(prev => ({
+          ...prev,
+          SERV_NOM_CLI: data.CLI_NOMBRES || "",
+          SERV_CED_CLI: data.CLI_CEDULA || "",
+          SERV_CORREO_CLI: data.CLI_CORREO || "",
+          SERV_CIUDAD: data.CLI_CIUDAD || "",
+          SERV_DIR: data.CLI_DIRECCION || ""
+        }));
+      } else {
+        setFormData(prev => ({
+          ...prev,
+          SERV_NOM_CLI: "",
+          SERV_CED_CLI: "",
+          SERV_CORREO_CLI: "",
+          SERV_CIUDAD: "",
+          SERV_DIR: ""
+        }));
+      }
+    } catch (err) {
+      console.error("Error conectando con la API de clientes:", err);
+    } finally {
+      setBuscandoCliente(false);
     }
   };
 
@@ -175,7 +201,7 @@ function FormularioDinamico() {
     if (!formData.SERV_DIR.trim()) return showError("La dirección del cliente es obligatoria.");
     if (!formData.SERV_DESCRIPCION.trim()) return showError("Debe describir el daño o problema.");
     if (formData.SERV_REQUIERE_FACT === null) return showError("Debe indicar si requiere factura o no.");
-    
+
     setLoading(true);
     try {
       const url = isEditMode ? '/api/editarservicio' : '/api/asignar';
@@ -211,14 +237,14 @@ function FormularioDinamico() {
   return (
     <div className="min-h-screen flex flex-col bg-[#f8fafc]">
       <Header />
-      
+
       <main className="flex-grow pt-28 pb-10 px-4 sm:px-6 lg:px-8">
         <div className="max-w-5xl mx-auto">
-          
+
           {/* Cabecera Dinámica */}
           <div className="flex items-center justify-between mb-8">
             <div className="flex items-center gap-4">
-              <button 
+              <button
                 onClick={handleCancel}
                 className="p-3 bg-white text-[#001C38] rounded-xl shadow-sm border border-gray-200 hover:bg-gray-50 transition-all"
               >
@@ -236,9 +262,9 @@ function FormularioDinamico() {
           </div>
 
           <form onSubmit={handleSubmit} className="bg-white rounded-[2rem] shadow-xl shadow-blue-900/5 border border-gray-100 p-8 grid grid-cols-1 lg:grid-cols-2 gap-x-12 gap-y-10">
-            
+
             <div className="space-y-8">
-              
+
               {/* Número de Servicio */}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
@@ -255,12 +281,35 @@ function FormularioDinamico() {
                 />
               </div>
 
-              {/* 👇 DATOS DEL CLIENTE (CON CÉDULA Y CORREO) 👇 */}
+              {/* DATOS DEL CLIENTE*/}
               <div className="space-y-3">
                 <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                   <User size={18} className="text-[#2563eb]" /> Datos del Cliente <span className="text-red-500">*</span>
                 </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2 flex gap-2">
+                    <input
+                      type="tel" placeholder="Buscar por Teléfono * (Ej: 098...)" maxLength={10}
+                      className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] font-bold"
+                      value={formData.SERV_TEL_CLI}
+                      onChange={(e) => handleChange('SERV_TEL_CLI', e.target.value.replace(/\D/g, ''))}
+                      onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), buscarClientePorTelefono())}
+                    />
+                    <button
+                      type="button"
+                      onClick={buscarClientePorTelefono}
+                      disabled={buscandoCliente || !formData.SERV_TEL_CLI}
+                      className="px-6 bg-[#2563eb] text-white rounded-2xl font-bold hover:bg-blue-700 transition-colors flex items-center justify-center gap-2 disabled:bg-blue-400 disabled:cursor-not-allowed"
+                    >
+                      {buscandoCliente ? (
+                        <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <><Search size={20} /> Buscar</>
+                      )}
+                    </button>
+                  </div>
+
                   <input
                     type="text" placeholder="Nombres y Apellidos completos *"
                     className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] md:col-span-2"
@@ -272,13 +321,8 @@ function FormularioDinamico() {
                     value={formData.SERV_CED_CLI} onChange={(e) => handleChange('SERV_CED_CLI', e.target.value.replace(/\D/g, ''))}
                   />
                   <input
-                    type="tel" placeholder="Teléfono *" maxLength={10}
-                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
-                    value={formData.SERV_TEL_CLI} onChange={(e) => handleChange('SERV_TEL_CLI', e.target.value.replace(/\D/g, ''))}
-                  />
-                  <input
                     type="email" placeholder="Correo electrónico (Opcional)"
-                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] md:col-span-2"
+                    className="w-full px-5 py-4 bg-[#f8fafc] border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38]"
                     value={formData.SERV_CORREO_CLI} onChange={(e) => handleChange('SERV_CORREO_CLI', e.target.value)}
                   />
                 </div>
@@ -310,12 +354,12 @@ function FormularioDinamico() {
                     <Camera size={18} className="text-[#2563eb]" /> Imagen del comprobante de servicio <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
                   </div>
                   {imagePreview && (
-                    <button type="button" onClick={() => {setImagePreview(null); handleChange('SERV_IMG_ENV', null)}} className="text-red-500 text-xs font-bold hover:underline">
+                    <button type="button" onClick={() => { setImagePreview(null); handleChange('SERV_IMG_ENV', null) }} className="text-red-500 text-xs font-bold hover:underline">
                       Quitar foto
                     </button>
                   )}
                 </div>
-                
+
                 {!imagePreview ? (
                   <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-2xl bg-gray-50 hover:bg-gray-100 cursor-pointer transition-all">
                     <div className="flex flex-col items-center justify-center pt-5 pb-6 text-gray-400">
@@ -334,7 +378,7 @@ function FormularioDinamico() {
             </div>
 
             <div className="space-y-8 flex flex-col justify-between">
-              
+
               <div className="space-y-8">
                 {/* Problema */}
                 <div className="space-y-3">
@@ -391,21 +435,23 @@ function FormularioDinamico() {
                     <div className="flex items-center gap-2 text-[#001C38] font-black uppercase tracking-wider text-sm">
                       <Users size={18} className="text-[#2563eb]" /> Asignar Técnico <span className="text-gray-400 font-normal text-xs">(Opcional)</span>
                     </div>
-                    {formData.SERV_CED_REC && (
-                      <button type="button" onClick={() => handleChange('SERV_CED_REC', '')} className="text-red-500 text-xs font-bold hover:underline">
+                    {formData.SERV_TEC_ASIG_ID && (
+                      <button type="button" onClick={() => handleChange('SERV_TEC_ASIG_ID', '')} className="text-red-500 text-xs font-bold hover:underline">
                         Quitar selección
                       </button>
                     )}
                   </div>
                   <select
                     className="w-full px-5 py-4 bg-white border border-gray-200 rounded-2xl outline-none focus:ring-2 focus:ring-[#2563eb]/20 transition-all text-[#001C38] font-medium appearance-none cursor-pointer"
-                    value={formData.SERV_CED_REC || ""}
-                    onChange={(e) => handleChange('SERV_CED_REC', e.target.value)}
+                    value={formData.SERV_TEC_ASIG_ID || ""}
+                    onChange={(e) => handleChange('SERV_TEC_ASIG_ID', e.target.value)}
                   >
                     <option value="" disabled className="text-gray-400">-- Seleccione un técnico (Puede ser después) --</option>
                     {tecnicos.length > 0 ? (
                       tecnicos.map(t => (
-                        <option key={t.MOV_CED} value={t.MOV_CED}>{t.nombre_completo} (CI: {t.MOV_CED})</option>
+                        <option key={t.MOV_ID || t.MOV_CED} value={t.MOV_ID}>
+                          {t.nombre_completo || t.NOM_MOV} (CI: {t.MOV_CED})
+                        </option>
                       ))
                     ) : (
                       <option value="" disabled>Cargando técnicos...</option>
@@ -427,7 +473,7 @@ function FormularioDinamico() {
                   className="w-full sm:w-2/3 py-4 bg-[#001C38] text-white font-black rounded-2xl uppercase tracking-widest hover:bg-[#002b5e] transition-all shadow-xl shadow-blue-900/20 flex items-center justify-center gap-2 disabled:opacity-70"
                 >
                   {loading ? (
-                     <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-6 h-6 border-4 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <><CheckCircle2 size={20} /> {isEditMode ? 'Actualizar Cambios' : 'Guardar Servicio'}</>
                   )}
@@ -439,7 +485,7 @@ function FormularioDinamico() {
         </div>
       </main>
 
-      {/* Modales (Éxito, Error, Cancelar) ... */}
+      {/* Modales (Éxito, Error, Cancelar) */}
       {successModal && (
         <div className="fixed inset-0 z-[120] bg-[#001C38]/40 backdrop-blur-sm flex items-center justify-center p-4">
           <div className="bg-white w-full max-w-sm rounded-[3rem] p-10 shadow-2xl text-center flex flex-col items-center gap-6 animate-in zoom-in-95 duration-200 border-2 border-green-100">

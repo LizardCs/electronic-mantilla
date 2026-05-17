@@ -5,11 +5,16 @@ import { supabase } from '@/lib/supabase';
 export async function GET() {
   try {
     const { data: servicios, error } = await supabase
-      .from('serviciostecnicos')
-      .select('*')
+      .from('SERVICIOSTECNICOS')
+      .select(`
+        *,
+        CLIENTES (CLI_NOMBRES, CLI_TELEFONO, CLI_CORREO, CLI_CIUDAD, CLI_DIRECCION),
+        USERSMOVIL (NOM_MOV, MOV_APE)
+      `)
       .order('SERV_ID', { ascending: false });
 
     if (error) throw error;
+    
     return NextResponse.json(servicios);
 
   } catch (error: any) {
@@ -25,24 +30,12 @@ export async function DELETE(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const id = searchParams.get('id');
-    const num = searchParams.get('num');
-
-    if (!id || !num) {
-      return NextResponse.json({ error: "Faltan parámetros (id o num)" }, { status: 400 });
-    }
-
-    const { error: errorReporte } = await supabase
-      .from('reportes')
-      .delete()
-      .eq('REP_SEV_NUM', num);
-
-    if (errorReporte) {
-      console.error("❌ Error borrando reporte:", errorReporte.message);
-      throw new Error("No se pudo eliminar el reporte asociado.");
+    if (!id) {
+      return NextResponse.json({ error: "Faltan parámetros (id)" }, { status: 400 });
     }
 
     const { error: errorServicio } = await supabase
-      .from('serviciostecnicos')
+      .from('SERVICIOSTECNICOS')
       .delete()
       .eq('SERV_ID', id);
 
