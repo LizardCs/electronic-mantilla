@@ -8,7 +8,7 @@ export async function GET() {
       .from('SERVICIOSTECNICOS')
       .select(`
         *,
-        CLIENTES (CLI_NOMBRES, CLI_TELEFONO, CLI_CORREO),
+        CLIENTES (CLI_NOMBRES, CLI_TELEFONO, CLI_CORREO, CLI_CIUDAD, CLI_DIRECCION),
         USERSMOVIL (NOM_MOV, MOV_APE)
       `)
       .order('SERV_ID', { ascending: false });
